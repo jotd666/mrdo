@@ -87,6 +87,9 @@
 ;	// settings 0x10 through 0x50 all give 1 Coin/1 Credit
 
 port_1_a000 = $a000
+port_2_a001 = $a001
+dsw_1_a002 = $a002
+dsw_2_a003 = $a003
 
 0000: 31 80 EB    ld   sp,$EB80
 0003: C3 68 00    jp   $0068
@@ -94,17 +97,20 @@ port_1_a000 = $a000
 0038: C3 B8 00    jp   $00B8
 
 0066: ED 45       retn
+
 0068: 3A 00 A0    ld   a,(port_1_a000)
 006B: 47          ld   b,a
-006C: 3A 01 A0    ld   a,($A001)
+006C: 3A 01 A0    ld   a,(port_2_a001)
 006F: A0          and  b
 0070: E6 10       and  $10
 0072: CA AF 56    jp   z,$56AF
+; clear ram
 0075: 21 00 E0    ld   hl,$E000
 0078: 11 01 E0    ld   de,$E001
 007B: 01 FF 0F    ld   bc,$0FFF
 007E: 36 00       ld   (hl),$00
 0080: ED B0       ldir
+; copy some ROM in RAM
 0082: 21 5B 36    ld   hl,$365B
 0085: 22 7B E0    ld   ($E07B),hl
 0088: 11 17 E0    ld   de,$E017
@@ -124,12 +130,7 @@ port_1_a000 = $a000
 00A9: ED 56       im   1
 00AB: FB          ei
 00AC: 18 FE       jr   $00AC
-00AE: 01 00 00    ld   bc,$0000
-00B1: 29          add  hl,hl
-00B2: 29          add  hl,hl
-00B3: 29          add  hl,hl
-00B4: 01 01 00    ld   bc,$0001
-00B7: 00          nop
+
 00B8: C5          push bc
 00B9: D5          push de
 00BA: E5          push hl
@@ -260,14 +261,14 @@ table_0156:
 	.word	$0D2A
 
 01A6: CD DE 01    call $01DE                                          
-01A9: 3A 01 A0    ld   a,($A001)
+01A9: 3A 01 A0    ld   a,(port_2_a001)
 01AC: 17          rla
 01AD: 38 15       jr   c,$01C4
 01AF: F5          push af
 01B0: 3A 03 E0    ld   a,($E003)
 01B3: A7          and  a
 01B4: 20 08       jr   nz,$01BE
-01B6: 3A 03 A0    ld   a,($A003)
+01B6: 3A 03 A0    ld   a,(dsw_2_a003)
 01B9: E6 0F       and  $0F
 01BB: CD FA 01    call $01FA
 01BE: 3E 03       ld   a,$03
@@ -278,7 +279,7 @@ table_0156:
 01C6: 3A 04 E0    ld   a,($E004)
 01C9: A7          and  a
 01CA: 20 0C       jr   nz,$01D8
-01CC: 3A 03 A0    ld   a,($A003)
+01CC: 3A 03 A0    ld   a,(dsw_2_a003)
 01CF: E6 F0       and  $F0
 01D1: 0F          rrca
 01D2: 0F          rrca
@@ -315,7 +316,7 @@ table_0156:
 0202: 3A 02 E0    ld   a,($E002)
 0205: A7          and  a
 0206: C0          ret  nz
-0207: 3A 03 A0    ld   a,($A003)
+0207: 3A 03 A0    ld   a,(dsw_2_a003)
 020A: 47          ld   b,a
 020B: E6 F0       and  $F0
 020D: C8          ret  z
@@ -869,7 +870,7 @@ table_0156:
 058F: 19          add  hl,de
 0590: 10 D4       djnz $0566
 0592: C9          ret
-0593: 3A 02 A0    ld   a,($A002)
+0593: 3A 02 A0    ld   a,(dsw_1_a002)
 0596: E6 C0       and  $C0
 0598: 07          rlca
 0599: 07          rlca
@@ -1265,7 +1266,7 @@ table_0156:
 0C37: 10 FB       djnz $0C34
 0C39: C9          ret
 
-0D2A: 3A 03 A0    ld   a,($A003)
+0D2A: 3A 03 A0    ld   a,(dsw_2_a003)
 0D2D: 47          ld   b,a
 0D2E: E6 F0       and  $F0
 0D30: 28 05       jr   z,$0D37
@@ -1305,7 +1306,7 @@ table_0156:
 0D7E: CD 85 04    call $0485
 0D81: CD 6E 70    call $706E
 0D84: CD B0 11    call $11B0
-0D87: 3A 03 A0    ld   a,($A003)
+0D87: 3A 03 A0    ld   a,(dsw_2_a003)
 0D8A: 47          ld   b,a
 0D8B: E6 F0       and  $F0
 0D8D: 28 34       jr   z,$0DC3
@@ -1314,14 +1315,14 @@ table_0156:
 0D92: 28 2F       jr   z,$0DC3
 0D94: 21 2C 11    ld   hl,$112C
 0D97: CD 03 04    call $0403
-0D9A: 3A 03 A0    ld   a,($A003)
+0D9A: 3A 03 A0    ld   a,(dsw_2_a003)
 0D9D: E6 0F       and  $0F
 0D9F: F5          push af
 0DA0: 11 2C 89    ld   de,$892C
 0DA3: CD FB 0F    call $0FFB
 0DA6: F1          pop  af
 0DA7: 47          ld   b,a
-0DA8: 3A 03 A0    ld   a,($A003)
+0DA8: 3A 03 A0    ld   a,(dsw_2_a003)
 0DAB: E6 F0       and  $F0
 0DAD: 0F          rrca
 0DAE: 0F          rrca
@@ -1523,7 +1524,7 @@ table_0156:
 0F71: C9          ret
 0F72: 3E E0       ld   a,$E0
 0F74: 32 00 E0    ld   ($E000),a
-0F77: 3A 03 A0    ld   a,($A003)
+0F77: 3A 03 A0    ld   a,(dsw_2_a003)
 0F7A: 47          ld   b,a
 0F7B: E6 F0       and  $F0
 0F7D: 28 0E       jr   z,$0F8D
@@ -1541,7 +1542,7 @@ table_0156:
 0F9A: 18 1B       jr   $0FB7
 0F9C: 3E C0       ld   a,$C0
 0F9E: 32 00 E0    ld   ($E000),a
-0FA1: 3A 03 A0    ld   a,($A003)
+0FA1: 3A 03 A0    ld   a,(dsw_2_a003)
 0FA4: 47          ld   b,a
 0FA5: E6 F0       and  $F0
 0FA7: 28 0E       jr   z,$0FB7
@@ -1663,13 +1664,7 @@ table_0156:
 11BE: 21 C5 11    ld   hl,$11C5
 11C1: CD 03 04    call $0403
 11C4: C9          ret
-11C5: 66          ld   h,(hl)
-11C6: 8A          adc  a,d
-11C7: 2C          inc  l
-11C8: 05          dec  b
-11C9: 2A 01 09    ld   hl,($0901)
-11CC: 08          ex   af,af'
-11CD: 02          ld   (bc),a
+
 11CE: DD CB 00 76 bit  6,(ix+$00)
 11D2: 20 3B       jr   nz,$120F
 11D4: 21 00 E0    ld   hl,$E000
@@ -1949,7 +1944,7 @@ table_0156:
 1478: 3A 00 E0    ld   a,($E000)
 147B: E6 BF       and  $BF
 147D: EE 10       xor  $10
-147F: 21 02 A0    ld   hl,$A002
+147F: 21 02 A0    ld   hl,dsw_1_a002
 1482: CB 6E       bit  5,(hl)
 1484: 28 05       jr   z,$148B
 1486: EE 01       xor  $01
@@ -2382,7 +2377,7 @@ table_0156:
 1803: 3A 00 E0    ld   a,($E000)
 1806: 1F          rra
 1807: D0          ret  nc
-1808: 21 01 A0    ld   hl,$A001
+1808: 21 01 A0    ld   hl,port_2_a001
 180B: C9          ret
 180C: 11 36 89    ld   de,$8936
 180F: 21 17 E0    ld   hl,$E017
@@ -2478,141 +2473,7 @@ table_0156:
 189F: 01 03 01    ld   bc,$0103
 18A2: CD 6C 04    call $046C
 18A5: C9          ret
-18A6: 41          ld   b,c
-18A7: 44          ld   b,h
-18A8: 47          ld   b,a
-18A9: 4B          ld   c,e
-18AA: 29          add  hl,hl
-18AB: 4C          ld   c,h
-18AC: 51          ld   d,c
-18AD: 29          add  hl,hl
-18AE: 52          ld   d,d
-18AF: 50          ld   d,b
-18B0: 29          add  hl,hl
-18B1: 53          ld   d,e
-18B2: 56          ld   d,(hl)
-18B3: 59          ld   e,c
-18B4: 5C          ld   e,h
-18B5: 40          ld   b,b
-18B6: 43          ld   b,e
-18B7: 46          ld   b,(hl)
-18B8: 4A          ld   c,d
-18B9: 29          add  hl,hl
-18BA: 4E          ld   c,(hl)
-18BB: 50          ld   d,b
-18BC: 29          add  hl,hl
-18BD: 54          ld   d,h
-18BE: 4F          ld   c,a
-18BF: 29          add  hl,hl
-18C0: 52          ld   d,d
-18C1: 55          ld   d,l
-18C2: 58          ld   e,b
-18C3: 5B          ld   e,e
-18C4: 42          ld   b,d
-18C5: 45          ld   b,l
-18C6: 48          ld   c,b
-18C7: 49          ld   c,c
-18C8: 29          add  hl,hl
-18C9: 4D          ld   c,l
-18CA: 4F          ld   c,a
-18CB: 29          add  hl,hl
-18CC: 53          ld   d,e
-18CD: 51          ld   d,c
-18CE: 29          add  hl,hl
-18CF: 54          ld   d,h
-18D0: 57          ld   d,a
-18D1: 5A          ld   e,d
-18D2: 5D          ld   e,l
-18D3: 40          ld   b,b
-18D4: 43          ld   b,e
-18D5: 46          ld   b,(hl)
-18D6: 4F          ld   c,a
-18D7: 29          add  hl,hl
-18D8: 52          ld   d,d
-18D9: 49          ld   c,c
-18DA: 29          add  hl,hl
-18DB: 4C          ld   c,h
-18DC: 4F          ld   c,a
-18DD: 29          add  hl,hl
-18DE: 52          ld   d,d
-18DF: 55          ld   d,l
-18E0: 58          ld   e,b
-18E1: 5B          ld   e,e
-18E2: 41          ld   b,c
-18E3: 44          ld   b,h
-18E4: 47          ld   b,a
-18E5: 50          ld   d,b
-18E6: 29          add  hl,hl
-18E7: 53          ld   d,e
-18E8: 4A          ld   c,d
-18E9: 29          add  hl,hl
-18EA: 4D          ld   c,l
-18EB: 50          ld   d,b
-18EC: 29          add  hl,hl
-18ED: 53          ld   d,e
-18EE: 56          ld   d,(hl)
-18EF: 59          ld   e,c
-18F0: 5C          ld   e,h
-18F1: 42          ld   b,d
-18F2: 45          ld   b,l
-18F3: 48          ld   c,b
-18F4: 51          ld   d,c
-18F5: 29          add  hl,hl
-18F6: 54          ld   d,h
-18F7: 4B          ld   c,e
-18F8: 29          add  hl,hl
-18F9: 4E          ld   c,(hl)
-18FA: 51          ld   d,c
-18FB: 29          add  hl,hl
-18FC: 54          ld   d,h
-18FD: 57          ld   d,a
-18FE: 5A          ld   e,d
-18FF: 5D          ld   e,l
-1900: 42          ld   b,d
-1901: 45          ld   b,l
-1902: 48          ld   c,b
-1903: 51          ld   d,c
-1904: 29          add  hl,hl
-1905: 54          ld   d,h
-1906: 50          ld   d,b
-1907: 29          add  hl,hl
-1908: 52          ld   d,d
-1909: 4A          ld   c,d
-190A: 29          add  hl,hl
-190B: 4C          ld   c,h
-190C: 57          ld   d,a
-190D: 5A          ld   e,d
-190E: 5D          ld   e,l
-190F: 41          ld   b,c
-1910: 44          ld   b,h
-1911: 47          ld   b,a
-1912: 50          ld   d,b
-1913: 29          add  hl,hl
-1914: 53          ld   d,e
-1915: 4F          ld   c,a
-1916: 29          add  hl,hl
-1917: 54          ld   d,h
-1918: 49          ld   c,c
-1919: 29          add  hl,hl
-191A: 4E          ld   c,(hl)
-191B: 56          ld   d,(hl)
-191C: 59          ld   e,c
-191D: 5C          ld   e,h
-191E: 40          ld   b,b
-191F: 43          ld   b,e
-1920: 46          ld   b,(hl)
-1921: 4F          ld   c,a
-1922: 29          add  hl,hl
-1923: 52          ld   d,d
-1924: 51          ld   d,c
-1925: 29          add  hl,hl
-1926: 53          ld   d,e
-1927: 4B          ld   c,e
-1928: 29          add  hl,hl
-1929: 4D          ld   c,l
-192A: 55          ld   d,l
-192B: 58          ld   e,b
-192C: 5B          ld   e,e
+
 192D: DD 7E 04    ld   a,(ix+$04)
 1930: A7          and  a
 1931: C8          ret  z
@@ -2623,6 +2484,7 @@ table_0156:
 1938: 3D          dec  a
 1939: 20 FA       jr   nz,$1935
 193B: C9          ret
+
 193C: AF          xor  a
 193D: 32 A9 E1    ld   ($E1A9),a
 1940: DD CB 00 76 bit  6,(ix+$00)
@@ -2768,7 +2630,7 @@ table_0156:
 1A7F: FE 40       cp   $40
 1A81: D0          ret  nc
 1A82: 4F          ld   c,a
-1A83: 3A 02 A0    ld   a,($A002)
+1A83: 3A 02 A0    ld   a,(dsw_1_a002)
 1A86: E6 03       and  $03
 1A88: 28 09       jr   z,$1A93
 1A8A: FE 03       cp   $03
@@ -3346,7 +3208,7 @@ table_0156:
 2029: 3A 00 E0    ld   a,($E000)
 202C: 87          add  a,a
 202D: 30 13       jr   nc,$2042
-202F: 3A 02 A0    ld   a,($A002)
+202F: 3A 02 A0    ld   a,(dsw_1_a002)
 2032: E6 04       and  $04
 2034: 20 0C       jr   nz,$2042
 2036: CD 6D 24    call $246D
@@ -3716,7 +3578,7 @@ table_0156:
 233B: 3A 00 A0    ld   a,(port_1_a000)
 233E: CB 46       bit  0,(hl)
 2340: C8          ret  z
-2341: 3A 01 A0    ld   a,($A001)
+2341: 3A 01 A0    ld   a,(port_2_a001)
 2344: C9          ret
 2345: DD 7E 0D    ld   a,(ix+$0d)
 2348: A7          and  a
@@ -6183,7 +6045,7 @@ jump_table_3300:
 3B62: 21 00 E0    ld   hl,$E000
 3B65: CB 7E       bit  7,(hl)
 3B67: 28 0E       jr   z,$3B77
-3B69: 21 02 A0    ld   hl,$A002
+3B69: 21 02 A0    ld   hl,dsw_1_a002
 3B6C: CB 4E       bit  1,(hl)
 3B6E: 20 07       jr   nz,$3B77
 3B70: FE 80       cp   $80
@@ -7085,7 +6947,7 @@ jump_table_3300:
 43E6: 3A 00 E0    ld   a,($E000)
 43E9: 87          add  a,a
 43EA: 30 0A       jr   nc,$43F6
-43EC: 3A 02 A0    ld   a,($A002)
+43EC: 3A 02 A0    ld   a,(dsw_1_a002)
 43EF: E6 10       and  $10
 43F1: 20 03       jr   nz,$43F6
 43F3: 21 AE 47    ld   hl,$47AE
@@ -7112,7 +6974,7 @@ jump_table_3300:
 4422: 5F          ld   e,a
 4423: 16 00       ld   d,$00
 4425: 21 B2 47    ld   hl,$47B2
-4428: 3A 02 A0    ld   a,($A002)
+4428: 3A 02 A0    ld   a,(dsw_1_a002)
 442B: E6 10       and  $10
 442D: 20 03       jr   nz,$4432
 442F: 21 BA 47    ld   hl,$47BA
@@ -7496,24 +7358,7 @@ jump_table_3300:
 47A3: CB DE       set  3,(hl)
 47A5: FD 36 30 04 ld   (iy+$30),$04
 47A9: C9          ret
-47AA: 2C          inc  l
-47AB: 01 3C 00    ld   bc,$003C
-47AE: F0          ret  p
-47AF: 00          nop
-47B0: 78          ld   a,b
-47B1: 00          nop
-47B2: B0          or   b
-47B3: 04          inc  b
-47B4: 84          add  a,h
-47B5: 03          inc  bc
-47B6: 58          ld   e,b
-47B7: 02          ld   (bc),a
-47B8: 2C          inc  l
-47B9: 01 C0 03    ld   bc,$03C0
-47BC: E0          ret  po
-47BD: 01 F0 00    ld   bc,$00F0
-47C0: F0          ret  p
-47C1: 00          nop
+
 47C2: FD 7E 17    ld   a,(iy+$17)
 47C5: 87          add  a,a
 47C6: 87          add  a,a
@@ -7770,22 +7615,7 @@ jump_table_3300:
 49B9: 3E 25       ld   a,$25
 49BB: CD 5C 04    call $045C
 49BE: C9          ret
-49BF: 9D          sbc  a,l
-49C0: 89          adc  a,c
-49C1: 02          ld   (bc),a
-49C2: 02          ld   (bc),a
-49C3: DD          db   $dd
-49C4: 89          adc  a,c
-49C5: 02          ld   (bc),a
-49C6: 01 FD 89    ld   bc,$89FD
-49C9: 02          ld   (bc),a
-49CA: 02          ld   (bc),a
-49CB: 3D          dec  a
-49CC: 8A          adc  a,d
-49CD: 02          ld   (bc),a
-49CE: 01 5D 8A    ld   bc,$8A5D
-49D1: 02          ld   (bc),a
-49D2: 02          ld   (bc),a
+
 49D3: DD 7E 0A    ld   a,(ix+$0a)
 49D6: FE 20       cp   $20
 49D8: D2 DF 4A    jp   nc,$4ADF
@@ -7927,6 +7757,7 @@ jump_table_3300:
 4B14: EB          ex   de,hl
 4B15: FD 19       add  iy,de
 4B17: C9          ret
+
 4B18: DD CB 00 76 bit  6,(ix+$00)
 4B1C: 20 1C       jr   nz,$4B3A
 4B1E: DD CB 00 F6 set  6,(ix+$00)
@@ -8241,6 +8072,7 @@ jump_table_3300:
 4DFB: FD 36 06 00 ld   (iy+$06),$00
 4DFF: FD E1       pop  iy
 4E01: C9          ret
+
 4E02: 3A 00 E0    ld   a,($E000)
 4E05: E6 40       and  $40
 4E07: 20 04       jr   nz,$4E0D
@@ -8568,7 +8400,7 @@ jump_table_4E4C:
 50D1: A7          and  a
 50D2: C0          ret  nz
 50D3: CD F4 02    call $02F4
-50D6: 3A 02 A0    ld   a,($A002)
+50D6: 3A 02 A0    ld   a,(dsw_1_a002)
 50D9: E6 08       and  $08
 50DB: 28 07       jr   z,$50E4
 50DD: 7D          ld   a,l
@@ -8983,10 +8815,7 @@ jump_table_4E4C:
 5423: D8          ret  c
 5424: A7          and  a
 5425: C9          ret
-5426: 10 20       djnz $5448
-5428: 40          ld   b,b
-5429: 60          ld   h,b
-542A: 80          add  a,b
+
 542B: 3A 00 E0    ld   a,($E000)
 542E: E6 40       and  $40
 5430: CA BC 54    jp   z,$54BC
@@ -9069,9 +8898,7 @@ jump_table_4E4C:
 54E3: 06 72       ld   b,$72
 54E5: CD 9D 02    call $029D
 54E8: C9          ret
-54E9: 00          nop
-54EA: 80          add  a,b
-54EB: 00          nop
+
 54EC: 21 01 E0    ld   hl,$E001
 54EF: CB CE       set  1,(hl)
 54F1: CB 86       res  0,(hl)
@@ -9537,13 +9364,13 @@ jump_table_4E4C:
 5849: 21 B9 8E    ld   hl,$8EB9
 584C: 3A 00 A0    ld   a,(port_1_a000)
 584F: CD 77 58    call $5877
-5852: 3A 01 A0    ld   a,($A001)
+5852: 3A 01 A0    ld   a,(port_2_a001)
 5855: CD 77 58    call $5877
 5858: 21 07 8E    ld   hl,$8E07
-585B: 3A 02 A0    ld   a,($A002)
+585B: 3A 02 A0    ld   a,(dsw_1_a002)
 585E: CD 86 58    call $5886
 5861: 21 06 8E    ld   hl,$8E06
-5864: 3A 03 A0    ld   a,($A003)
+5864: 3A 03 A0    ld   a,(dsw_2_a003)
 5867: CD 86 58    call $5886
 586A: D1          pop  de
 586B: C1          pop  bc
@@ -11320,51 +11147,8 @@ jump_table_4E4C:
 78C6: EB          ex   de,hl
 78C7: CD 03 04    call $0403
 78CA: C9          ret
-78CB: 1A          ld   a,(de)
-78CC: 89          adc  a,c
-78CD: 3E 0F       ld   a,$0F
-78CF: 0C          inc  c
-78D0: 18 17       jr   $78E9
-78D2: 10 1B       djnz $78EF
-78D4: 0A          ld   a,(bc)
-78D5: 1D          dec  e
-78D6: 1E 15       ld   e,$15
-78D8: 0A          ld   a,(bc)
-78D9: 1D          dec  e
-78DA: 12          ld   (de),a
-78DB: 18 17       jr   $78F4
-78DD: 1C          inc  e
-78DE: E6 78       and  $78
-78E0: ED 78       in   a,(c)
-78E2: F4 78 FD    call p,$FD78
-78E5: 78          ld   a,b
-78E6: 18 89       jr   $7871
-78E8: 00          nop
-78E9: 03          inc  bc
-78EA: 22 18 1E    ld   ($1E18),hl
-78ED: 98          sbc  a,b
-78EE: 89          adc  a,c
-78EF: 00          nop
-78F0: 03          inc  bc
-78F1: 20 12       jr   nz,$7905
-78F3: 17          rla
-78F4: 77          ld   (hl),a
-78F5: 89          adc  a,c
-78F6: 00          nop
-78F7: 05          dec  b
-78F8: 0E 21       ld   c,$21
-78FA: 1D          dec  e
-78FB: 1B          dec  de
-78FC: 0A          ld   a,(bc)
-78FD: 37          scf
-78FE: 8A          adc  a,d
-78FF: 2E 06       ld   l,$06
-7901: 60          ld   h,b
-7902: 61          ld   h,c
-7903: 62          ld   h,d
-7904: 63          ld   h,e
-7905: 64          ld   h,h
-7906: 65          ld   h,l
+
+
 7907: DD 34 06    inc  (ix+$06)
 790A: DD 7E 02    ld   a,(ix+$02)
 790D: FE 03       cp   $03
