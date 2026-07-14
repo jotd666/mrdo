@@ -8,10 +8,11 @@ input_dict = {
 
 }
 
-single_line_to_cc_protect = set()
-remove_error_in_next_line = set()
-remove_error_in_prev_line = {0,0x014D,0x0138,0x141}
-line_to_push_cc_protect = set() | single_line_to_cc_protect
+single_line_to_cc_protect = {0x27A,0x0287,0x053a,0x3f68,0x3f75,0x477c,0x47d5}
+remove_error_in_next_line = {0x27B,0x0289,0x1657,0x166a,0x2b29,0x3de7,0x3f69,
+0x3f76,0x477e,0x48d1,0x5cec}
+remove_error_in_prev_line = {0,0x014D,0x0138,0x141,0x37A}
+line_to_push_cc_protect = {0x037a} | single_line_to_cc_protect
 line_to_pull_cc_protect = set() | single_line_to_cc_protect
 
 
@@ -232,9 +233,9 @@ with open(source_dir / "conv.s") as f:
         ###############################################
         # game_specific
 
-##        if "replace by EXG_A_A_PRIME" in line:
-##            #lines[i-1] = "* just swap A/A'\n"+change_instruction("EXG_A_A_PRIME",lines,i-1)
-##            line = remove_error(line)
+        if "replace by EXG_A_A_PRIME" in line:
+            lines[i-1] = "* just swap A/A'\n"+change_instruction("EXG_A_A_PRIME",lines,i-1)
+            line = remove_error(line)
 ##        if "review stray cmp before MAKE_HL_NO_AR" in line:
 ##            # remove the errors now that the result is CC protected
 ##            line = remove_error(line)
@@ -268,13 +269,54 @@ with open(source_dir / "conv.s") as f:
 """
 
             kill_code(lines,i,0x0103)
+        elif address == 0x0374:
+            line = change_instruction("moveq\t#3-1,d1",lines,i)
+        elif address == 0x037d:
+            line = "\tPOP_SR\n"+change_instruction("dbf\td1,l_0377",lines,i)
+        elif address == 0x0378:
+            line = change_instruction("abcd\td7,d0",lines,i)
+        elif address == 0x164f:
+            line = """\tMAKE_HL    a0
+\tbtst.b    #1,(3,a0)
+"""
+            kill_code(lines,i,0x1656)
+        elif address == 0x1664:
+            line = """\tMAKE_HL    a0
+\tbtst.b    #0,(2,a0)
+"""
+            kill_code(lines,i,0x1669)
+
+        elif address in {0x170a,0x2936,0x2961}:
+            line += "\tscs\td7\n"
+        elif address in {0x170f,0x293a,0x2965}:
+            line = "\ttst.b\td7\n"+change_instruction("jeq\tl_1713",lines,i)
+            lines[i+1] = remove_error(lines[i+1])
         elif address == 0x32f7:
             line = "\tlea    jump_table_3300,a4 |  [$32f7: ld   hl,jump_table_3300]\n"+rest_of_jump_table_code
             kill_code(lines,i,0x32FF)
+        elif address == 0x3de5:
+            line = """    MAKE_HL    a0
+    exg    d3,d5                                  | [$3de6: ex   de,hl]
+    exg    d4,d6                                  | [...]
+    cmp.b    (a0),d0                                  | [$3de5: cp   (hl)]
+"""
+            kill_code(lines,i,0x3de6)
         elif address == 0x4e3b:
             line = "\tlea    jump_table_4e4c,a4 | [$4e3b: ld   hl,jump_table_4e4c]\n"+rest_of_jump_table_code
             kill_code(lines,i,0x4e43)
-
+        elif address == 0x48C8:
+            line = """    MAKE_HL\ta0
+    move.b\t(2,a0),d0                                     | [$48c8: dec  hl]
+    btst.b\t#5,(3,a0)
+"""
+            kill_code(lines,i,0x48d0)
+        elif address == 0x4efe:
+            line = "\tSET_C_FROM_X\n"+line
+            lines[i+1] = remove_error(lines[i+1])
+        elif address == 0x57F2:
+            kill_code(lines,i,0x5800)
+        elif address == 0x74ce:
+            lines[i+2] = remove_error(lines[i+2])
         ###############################################
         if address in remove_error_in_prev_line:
             lines[i-1] = remove_error(lines[i-1].strip()+f" ({address:04x})")
