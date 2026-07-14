@@ -10,7 +10,7 @@ input_dict = {
 
 single_line_to_cc_protect = set()
 remove_error_in_next_line = set()
-remove_error_in_prev_line = set()
+remove_error_in_prev_line = {0,0x014D,0x0138,0x141}
 line_to_push_cc_protect = set() | single_line_to_cc_protect
 line_to_pull_cc_protect = set() | single_line_to_cc_protect
 
@@ -135,6 +135,13 @@ this_dir = pathlib.Path(__file__).absolute().parent
 
 source_dir = this_dir / "../src"
 
+rest_of_jump_table_code = """    MAKE_DE_NO_AR
+    add.w    d4,d4
+    add.w    d4,d4
+    move.l  (a4,d4.w),a4
+    jmp     (a4)
+"""
+
 # various dirty but at least automatic patches applying on the converted code
 with open(source_dir / "conv.s") as f:
     lines = list(f)
@@ -153,13 +160,8 @@ with open(source_dir / "conv.s") as f:
 ##"""
         address = get_line_address(line)
 
-        if "[address_pop]" in line:
-            if "MAKE_" in line:
-                line = ""
-            else:
-                line = change_instruction("addq.w\t#4,sp",lines,i)
 
-        elif "[return]" in line:
+        if "[return]" in line:
             if "MAKE_" in line:
                 line = ""
             else:
@@ -168,6 +170,11 @@ with open(source_dir / "conv.s") as f:
         elif "[nop]" in line:
             line = remove_instruction(lines,i)
 
+        elif "[push_function]" in line:
+            toks = line.split()
+            line = remove_instruction(lines,i)
+            pa = toks[1].strip("#")
+            lines[i+1] = change_instruction(f"pea\t{pa}",lines,i+1)
         elif "[breakpoint]" in line and address:
             line = f'\tBREAKPOINT "{address:04x}"\n{line}'
 
@@ -180,11 +187,6 @@ with open(source_dir / "conv.s") as f:
 
         line = process_jump_table(line)
 
-        if "[push_function]" in line:
-            toks = line.split()
-            line = remove_instruction(lines,i)
-            pa = toks[1].strip("#")
-            lines[i+1] = change_instruction(f"pea\t{pa}",lines,i+1)
 
         # pre-add video_address tag if we find a store instruction to an explicit 3000-3FFF address
         m = store_to_video.search(line)
@@ -237,11 +239,41 @@ with open(source_dir / "conv.s") as f:
 ##            # remove the errors now that the result is CC protected
 ##            line = remove_error(line)
 
-##        if "unsupported instruction im" in line:
-##            line = remove_error(line)
+        if "unsupported instruction im" in line:
+            line = remove_error(line)
 ##        if "unsupported instruction out" in line:
 ##            line = remove_error(line)
 
+        if address in [0,0x014D]:
+            line = remove_instruction(lines,i)
+        elif address == 0x00d5:
+            line = change_instruction("lea\ttable_0156,a4",lines,i)
+        elif address == 0x00e9:
+            line = """
+    MAKE_HL    a0                                 | [$00e9: ld   e,(hl)]
+    move.l    (a0)+,d4                             | [...] get parameter
+    lea    (a6,d4.l),a2 |  [$00ee: pop  ix] now IX is the parameter
+    move.l    (a0)+,a4                  | now a4 is the function
+    addq      #4,d6
+    MAKE_H
+    btst.b    #7,(0x00,a2)                        | [$00f4: bit  7,(ix+$00)]
+    jeq    l_0108                                 | [$00f8: jr   z,$0108]
+    MAKE_BC_NO_AR                              | [$00fa: push bc]
+    move.w    d2,-(a7)                            | [...]
+    MAKE_HL_NO_AR                              | [$00fb: push hl]
+    move.w    d6,-(a7)                            | [...]
+    move.l    a3,-(a7)                            | [$00fc: push iy]
+    pea    return_0104(pc)   | return address
+    jmp       (a4)
+"""
+
+            kill_code(lines,i,0x0103)
+        elif address == 0x32f7:
+            line = "\tlea    jump_table_3300,a4 |  [$32f7: ld   hl,jump_table_3300]\n"+rest_of_jump_table_code
+            kill_code(lines,i,0x32FF)
+        elif address == 0x4e3b:
+            line = "\tlea    jump_table_4e4c,a4 | [$4e3b: ld   hl,jump_table_4e4c]\n"+rest_of_jump_table_code
+            kill_code(lines,i,0x4e43)
 
         ###############################################
         if address in remove_error_in_prev_line:

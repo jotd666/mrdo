@@ -91,6 +91,7 @@ port_2_a001 = $a001
 dsw_1_a002 = $a002
 dsw_2_a003 = $a003
 
+reset_0000:  ; [global]
 0000: 31 80 EB    ld   sp,$EB80
 0003: C3 68 00    jp   $0068
 
@@ -131,6 +132,7 @@ dsw_2_a003 = $a003
 00AB: FB          ei
 00AC: 18 FE       jr   $00AC
 
+irq_00b8:   ; [global]
 00B8: C5          push bc
 00B9: D5          push de
 00BA: E5          push hl
@@ -155,20 +157,22 @@ dsw_2_a003 = $a003
 00EB: 56          ld   d,(hl)
 00EC: 23          inc  hl
 00ED: D5          push de
-00EE: DD E1       pop  ix
+00EE: DD E1       pop  ix			; now IX is the parameter
 00F0: 5E          ld   e,(hl)
 00F1: 23          inc  hl
 00F2: 56          ld   d,(hl)
-00F3: 23          inc  hl
+00F3: 23          inc  hl			; now DE is the function
 00F4: DD CB 00 7E bit  7,(ix+$00)
 00F8: 28 0E       jr   z,$0108
 00FA: C5          push bc
 00FB: E5          push hl
 00FC: FD E5       push iy
-00FE: 01 04 01    ld   bc,$0104
+00FE: 01 04 01    ld   bc,return_0104		; push function
 0101: C5          push bc
 0102: EB          ex   de,hl
 0103: E9          jp   (hl)		; [indirect_jump]
+; returns there
+return_0104:
 0104: FD E1       pop  iy
 0106: E1          pop  hl
 0107: C1          pop  bc
@@ -191,7 +195,7 @@ dsw_2_a003 = $a003
 0128: 1F          rra
 0129: 38 03       jr   c,$012E
 012B: 1F          rra
-012C: 38 1F       jr   c,$014D
+012C: 38 1F       jr   c,fatal_error_014d
 012E: FD E1       pop  iy
 0130: DD E1       pop  ix
 0132: F1          pop  af
@@ -199,22 +203,26 @@ dsw_2_a003 = $a003
 0134: D1          pop  de
 0135: C1          pop  bc
 0136: FB          ei
+
 0137: C9          ret
+
 0138: 31 80 EB    ld   sp,$EB80
 013B: FB          ei
 013C: CD EC 54    call $54EC
-013F: 18 0C       jr   $014D
+013F: 18 0C       jr   fatal_error_014d     ; [breakpoint]
+
 0141: 31 76 EB    ld   sp,$EB76
 0144: FB          ei
-0145: CD 8E 55    call $558E
+0145: CD 8E 55    call $558E    ; [breakpoint]
 0148: F1          pop  af
 0149: E1          pop  hl
 014A: D1          pop  de
 014B: C1          pop  bc
 014C: C9          ret
-014D: 31 80 EB    ld   sp,$EB80
+
+014D: 31 80 EB    ld   sp,$EB80		
 0150: FB          ei
-0151: CD 47 56    call $5647
+0151: CD 47 56    call $5647  ; [breakpoint]
 0154: 18 FE       jr   $0154
 
 ; ram pointer, then rom call
@@ -1438,6 +1446,7 @@ table_0156:
 0EAE: DD 34 03    inc  (ix+$03)
 0EB1: DD 36 01 10 ld   (ix+$01),$10
 0EB5: C9          ret
+
 0EB6: 06 0A       ld   b,$0A
 0EB8: 11 36 89    ld   de,$8936
 0EBB: 21 17 E0    ld   hl,$E017
@@ -5124,7 +5133,7 @@ table_0156:
 327F: DD 36 00 00 ld   (ix+$00),$00
 3283: C9          ret
 3284: 78          ld   a,b
-3285: 21 0E 33    ld   hl,$330E		; [push_function]
+3285: 21 0E 33    ld   hl,return_330e		; [push_function]
 3288: E5          push hl
 3289: 1F          rra
 328A: DA 4D 36    jp   c,$364D
@@ -5188,6 +5197,7 @@ jump_table_3300:
 	.word	$3412 
 	.word	$34BE 
 
+return_330e:
 330E: DD 7E 13    ld   a,(ix+$13)
 3311: FE 24       cp   $24
 3313: 30 03       jr   nc,$3318
@@ -7016,7 +7026,7 @@ jump_table_3300:
 4484: DD 36 00 00 ld   (ix+$00),$00
 4488: CD 4F 05    call $054F
 448B: C9          ret
-448C: 21 DD 44    ld   hl,$44DD
+448C: 21 DD 44    ld   hl,entry_44dd		; [push_function]
 448F: E5          push hl
 4490: DD CB 07 56 bit  2,(ix+$07)
 4494: C2 B5 46    jp   nz,$46B5
@@ -7048,6 +7058,8 @@ jump_table_3300:
 44D5: FE 10       cp   $10
 44D7: D2 46 45    jp   nc,$4546
 44DA: C3 01 45    jp   $4501
+
+entry_44dd:
 44DD: DD 34 08    inc  (ix+$08)
 44E0: DD 7E 08    ld   a,(ix+$08)
 44E3: FE 18       cp   $18
@@ -7783,7 +7795,7 @@ jump_table_3300:
 4B5D: 20 05       jr   nz,$4B64
 4B5F: DD 36 00 00 ld   (ix+$00),$00
 4B63: C9          ret
-4B64: 21 CB 4B    ld   hl,$4BCB
+4B64: 21 CB 4B    ld   hl,entry_4bcb		; [push_function]
 4B67: E5          push hl
 4B68: DD CB 07 56 bit  2,(ix+$07)
 4B6C: C2 89 4C    jp   nz,$4C89
@@ -7827,6 +7839,8 @@ jump_table_3300:
 4BC4: A7          and  a
 4BC5: C2 15 4C    jp   nz,$4C15
 4BC8: C3 F4 4B    jp   $4BF4
+
+entry_4bcb:
 4BCB: DD 34 08    inc  (ix+$08)
 4BCE: 06 27       ld   b,$27
 4BD0: 0E 02       ld   c,$02
@@ -8093,7 +8107,7 @@ jump_table_3300:
 4E28: DD 19       add  ix,de
 4E2A: 10 EF       djnz $4E1B
 4E2C: C9          ret
-4E2D: 21 44 4E    ld   hl,$4E44
+4E2D: 21 44 4E    ld   hl,entry_4e44		; [push_function]
 4E30: E5          push hl
 4E31: DD 7E 00    ld   a,(ix+$00)
 4E34: E6 78       and  $78
@@ -8109,6 +8123,7 @@ jump_table_3300:
 4E42: EB          ex   de,hl
 4E43: E9          jp   (hl)		; [indirect_jump]
 
+entry_4e44:
 4E44: 06 5E       ld   b,$5E
 4E46: 0E 05       ld   c,$05
 4E48: CD 97 02    call $0297
