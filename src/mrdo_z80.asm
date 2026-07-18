@@ -802,32 +802,8 @@ table_0156:
 051D: 32 42 8F    ld   ($8F42),a
 0520: CD 99 03    call $0399
 0523: C9          ret
-0524: FE 88       cp   $88
-0526: 26 03       ld   h,$03
-0528: 01 1C 1D    ld   bc,$1D1C
-052B: FE 8A       cp   $8A
-052D: 26 03       ld   h,$03
-052F: 02          ld   (bc),a
-0530: 17          rla
-0531: 0D          dec  c
-0532: 22 8A 26    ld   ($268A),hl
-0535: 0A          ld   a,(bc)
-0536: 1C          inc  e
-0537: 0C          inc  c
-0538: 0E 17       ld   c,$17
-053A: 0E 28       ld   c,$28
-053C: 28 28       jr   z,$0566
-053E: 28 29       jr   z,$0569
-0540: 21 8A 2C    ld   hl,$2C8A
-0543: 03          inc  bc
-0544: 1D          dec  e
-0545: 18 19       jr   $0560
-0547: A5          and  l
-0548: 40          ld   b,b
-0549: CD 16 36    call $3616
-054C: 7A          ld   a,d
-054D: 6F          ld   l,a
-054E: 3E 3E       ld   a,$3E
+
+
 0550: 2D          dec  l
 0551: 08          ex   af,af'
 0552: 3E 4C       ld   a,$4C
@@ -896,7 +872,7 @@ table_0156:
 05C2: 01 02 02    ld   bc,$0202
 05C5: CD 42 04    call $0442
 05C8: C1          pop  bc
-05C9: 10 F0       djnz $05BB
+05C9: 10 F0       djnz $05BB 
 05CB: 3E 06       ld   a,$06
 05CD: 91          sub  c
 05CE: C8          ret  z
@@ -905,6 +881,8 @@ table_0156:
 05D1: 06 02       ld   b,$02
 05D3: CD 6C 04    call $046C
 05D6: C9          ret
+
+cc_returning_05d7:
 05D7: DD 7E 01    ld   a,(ix+$01)
 05DA: FD 96 01    sub  (iy+$01)
 05DD: 30 02       jr   nc,$05E1
@@ -4192,7 +4170,7 @@ table_0156:
 2907: FD E5       push iy
 2909: FD 21 C5 E1 ld   iy,$E1C5
 290D: 01 09 09    ld   bc,$0909
-2910: CD D7 05    call $05D7
+2910: CD D7 05    call cc_returning_05d7
 2913: 30 0B       jr   nc,$2920
 2915: FD CB 07 FE set  7,(iy+$07)
 2919: FD E1       pop  iy
@@ -4207,7 +4185,7 @@ table_0156:
 2930: 20 15       jr   nz,$2947
 2932: C5          push bc
 2933: 01 0A 0A    ld   bc,$0A0A
-2936: CD D7 05    call $05D7
+2936: CD D7 05    call cc_returning_05d7
 2939: C1          pop  bc
 293A: 30 0B       jr   nc,$2947
 293C: FD CB 00 DE set  3,(iy+$00)
@@ -4225,7 +4203,7 @@ table_0156:
 295B: 20 19       jr   nz,$2976
 295D: C5          push bc
 295E: 01 0A 0A    ld   bc,$0A0A
-2961: CD D7 05    call $05D7
+2961: CD D7 05    call cc_returning_05d7
 2964: C1          pop  bc
 2965: 30 0F       jr   nc,$2976
 2967: FD CB 00 DE set  3,(iy+$00)
@@ -4241,7 +4219,7 @@ table_0156:
 2983: FE A0       cp   $A0
 2985: 20 17       jr   nz,$299E
 2987: 01 0A 0A    ld   bc,$0A0A
-298A: CD D7 05    call $05D7
+298A: CD D7 05    call cc_returning_05d7
 298D: 30 0F       jr   nc,$299E
 298F: FD CB 00 DE set  3,(iy+$00)
 2993: DD CB 00 DE set  3,(ix+$00)
@@ -4262,7 +4240,7 @@ table_0156:
 29B7: 30 0A       jr   nc,$29C3
 29B9: C5          push bc
 29BA: 01 08 08    ld   bc,$0808
-29BD: CD D7 05    call $05D7
+29BD: CD D7 05    call cc_returning_05d7
 29C0: 38 07       jr   c,$29C9
 29C2: C1          pop  bc
 29C3: FD 19       add  iy,de
@@ -5098,7 +5076,7 @@ table_0156:
 329A: FD E5       push iy
 329C: FD 21 C5 E1 ld   iy,$E1C5
 32A0: 01 07 07    ld   bc,$0707
-32A3: CD D7 05    call $05D7
+32A3: CD D7 05    call cc_returning_05d7
 32A6: 30 0F       jr   nc,$32B7
 32A8: FD CB 00 DE set  3,(iy+$00)
 32AC: DD CB 00 EE set  5,(ix+$00)
@@ -6607,7 +6585,7 @@ return_330e:
 4162: D5          push de
 4163: 82          add  a,d
 4164: 57          ld   d,a
-4165: CD 0B 54    call $540B
+4165: CD 0B 54    call cc_returning_540b
 4168: D1          pop  de
 4169: 38 3E       jr   c,$41A9
 416B: 3E 07       ld   a,$07
@@ -6991,7 +6969,7 @@ return_330e:
 44A4: FD E5       push iy
 44A6: FD 21 C5 E1 ld   iy,$E1C5
 44AA: 01 07 07    ld   bc,$0707
-44AD: CD D7 05    call $05D7
+44AD: CD D7 05    call cc_returning_05d7
 44B0: 30 0F       jr   nc,$44C1
 44B2: FD CB 00 DE set  3,(iy+$00)
 44B6: DD CB 07 D6 set  2,(ix+$07)
@@ -7143,7 +7121,7 @@ entry_44dd:
 4604: FE 80       cp   $80
 4606: 20 0E       jr   nz,$4616
 4608: D9          exx
-4609: CD D7 05    call $05D7
+4609: CD D7 05    call cc_returning_05d7
 460C: D9          exx
 460D: 30 07       jr   nc,$4616
 460F: FD E1       pop  iy
@@ -7595,7 +7573,7 @@ entry_44dd:
 49F4: FE A8       cp   $A8
 49F6: CA 82 4A    jp   z,$4A82
 49F9: 01 0E 0E    ld   bc,$0E0E
-49FC: CD D7 05    call $05D7
+49FC: CD D7 05    call cc_returning_05d7
 49FF: D2 82 4A    jp   nc,$4A82
 4A02: FD 7E 01    ld   a,(iy+$01)
 4A05: DD 96 01    sub  (ix+$01)
@@ -7682,7 +7660,7 @@ entry_44dd:
 4AC5: FE 02       cp   $02
 4AC7: 38 A7       jr   c,$4A70
 4AC9: 01 0F 0F    ld   bc,$0F0F
-4ACC: CD D7 05    call $05D7
+4ACC: CD D7 05    call cc_returning_05d7
 4ACF: 30 06       jr   nc,$4AD7
 4AD1: FD E1       pop  iy
 4AD3: CD 3F 49    call $493F
@@ -7765,7 +7743,7 @@ entry_44dd:
 4B88: FD E5       push iy
 4B8A: FD 21 C5 E1 ld   iy,$E1C5
 4B8E: 01 07 07    ld   bc,$0707
-4B91: CD D7 05    call $05D7
+4B91: CD D7 05    call cc_returning_05d7
 4B94: 30 0F       jr   nc,$4BA5
 4B96: FD CB 00 DE set  3,(iy+$00)
 4B9A: DD CB 07 D6 set  2,(ix+$07)
@@ -8223,7 +8201,7 @@ jump_table_4E4C:
 4F89: FE B0       cp   $B0
 4F8B: 30 23       jr   nc,$4FB0
 4F8D: D9          exx
-4F8E: CD D7 05    call $05D7
+4F8E: CD D7 05    call cc_returning_05d7
 4F91: D9          exx
 4F92: 30 1C       jr   nc,$4FB0
 4F94: FD 36 00 C0 ld   (iy+$00),$C0
@@ -8430,7 +8408,7 @@ jump_table_4E4C:
 5150: 20 11       jr   nz,$5163
 5152: C5          push bc
 5153: 01 FF 0E    ld   bc,$0EFF
-5156: CD D7 05    call $05D7
+5156: CD D7 05    call cc_returning_05d7
 5159: C1          pop  bc
 515A: 30 07       jr   nc,$5163
 515C: FD CB 00 D6 set  2,(iy+$00)
@@ -8447,7 +8425,7 @@ jump_table_4E4C:
 5177: 20 11       jr   nz,$518A
 5179: C5          push bc
 517A: 01 FF 0E    ld   bc,$0EFF
-517D: CD D7 05    call $05D7
+517D: CD D7 05    call cc_returning_05d7
 5180: C1          pop  bc
 5181: 30 07       jr   nc,$518A
 5183: FD CB 00 D6 set  2,(iy+$00)
@@ -8517,7 +8495,7 @@ jump_table_4E4C:
 5200: DD 7E 03    ld   a,(ix+$03)
 5203: C6 07       add  a,$07
 5205: 5F          ld   e,a
-5206: CD 0B 54    call $540B
+5206: CD 0B 54    call cc_returning_540b
 5209: D8          ret  c
 520A: 2B          dec  hl
 520B: CD 0E 54    call $540E
@@ -8626,7 +8604,7 @@ jump_table_4E4C:
 52D7: FE 80       cp   $80
 52D9: 20 1E       jr   nz,$52F9
 52DB: D9          exx
-52DC: CD D7 05    call $05D7
+52DC: CD D7 05    call cc_returning_05d7
 52DF: D9          exx
 52E0: 30 17       jr   nc,$52F9
 52E2: FD 7E 00    ld   a,(iy+$00)
@@ -8650,7 +8628,7 @@ jump_table_4E4C:
 530C: FE A0       cp   $A0
 530E: 20 1C       jr   nz,$532C
 5310: 01 08 0E    ld   bc,$0E08
-5313: CD D7 05    call $05D7
+5313: CD D7 05    call cc_returning_05d7
 5316: 30 14       jr   nc,$532C
 5318: FD CB 00 E6 set  4,(iy+$00)
 531C: DD 34 05    inc  (ix+$05)
@@ -8667,7 +8645,7 @@ jump_table_4E4C:
 533B: FE 80       cp   $80
 533D: 20 19       jr   nz,$5358
 533F: 01 09 09    ld   bc,$0909
-5342: CD D7 05    call $05D7
+5342: CD D7 05    call cc_returning_05d7
 5345: 30 11       jr   nc,$5358
 5347: FD CB 00 E6 set  4,(iy+$00)
 534B: DD CB 05 E6 set  4,(ix+$05)
@@ -8687,7 +8665,7 @@ jump_table_4E4C:
 536F: FE 80       cp   $80
 5371: 20 1E       jr   nz,$5391
 5373: D9          exx
-5374: CD D7 05    call $05D7
+5374: CD D7 05    call cc_returning_05d7
 5377: D9          exx
 5378: 30 17       jr   nc,$5391
 537A: FD 7E 00    ld   a,(iy+$00)
@@ -8716,21 +8694,21 @@ jump_table_4E4C:
 53AF: D6 09       sub  $09
 53B1: 5F          ld   e,a
 53B2: D5          push de
-53B3: CD 0B 54    call $540B
+53B3: CD 0B 54    call cc_returning_540b
 53B6: D1          pop  de
 53B7: 38 4D       jr   c,$5406
 53B9: 7A          ld   a,d
 53BA: C6 06       add  a,$06
 53BC: 57          ld   d,a
 53BD: D5          push de
-53BE: CD 0B 54    call $540B
+53BE: CD 0B 54    call cc_returning_540b
 53C1: D1          pop  de
 53C2: 38 29       jr   c,$53ED
 53C4: 7A          ld   a,d
 53C5: D6 0D       sub  $0D
 53C7: 57          ld   d,a
 53C8: D5          push de
-53C9: CD 0B 54    call $540B
+53C9: CD 0B 54    call cc_returning_540b
 53CC: D1          pop  de
 53CD: 38 05       jr   c,$53D4
 53CF: DD 36 00 B0 ld   (ix+$00),$B0
@@ -8739,13 +8717,13 @@ jump_table_4E4C:
 53D5: C6 0F       add  a,$0F
 53D7: 57          ld   d,a
 53D8: D5          push de
-53D9: CD 0B 54    call $540B
+53D9: CD 0B 54    call cc_returning_540b
 53DC: D1          pop  de
 53DD: 38 27       jr   c,$5406
 53DF: 7B          ld   a,e
 53E0: C6 08       add  a,$08
 53E2: 5F          ld   e,a
-53E3: CD 0B 54    call $540B
+53E3: CD 0B 54    call cc_returning_540b
 53E6: 38 1E       jr   c,$5406
 53E8: DD 36 00 A8 ld   (ix+$00),$A8
 53EC: C9          ret
@@ -8753,18 +8731,20 @@ jump_table_4E4C:
 53EE: D6 0E       sub  $0E
 53F0: 57          ld   d,a
 53F1: D5          push de
-53F2: CD 0B 54    call $540B
+53F2: CD 0B 54    call cc_returning_540b
 53F5: D1          pop  de
 53F6: 38 0E       jr   c,$5406
 53F8: 7B          ld   a,e
 53F9: C6 08       add  a,$08
 53FB: 5F          ld   e,a
-53FC: CD 0B 54    call $540B
+53FC: CD 0B 54    call cc_returning_540b
 53FF: 38 05       jr   c,$5406
 5401: DD 36 00 A9 ld   (ix+$00),$A9
 5405: C9          ret
 5406: DD 36 00 80 ld   (ix+$00),$80
 540A: C9          ret
+
+cc_returning_540b:
 540B: CD 89 1D    call $1D89
 540E: 7E          ld   a,(hl)
 540F: FE 77       cp   $77
@@ -8815,7 +8795,7 @@ jump_table_4E4C:
 5478: FD E5       push iy
 547A: FD 21 C5 E1 ld   iy,$E1C5
 547E: 01 05 05    ld   bc,$0505
-5481: CD D7 05    call $05D7
+5481: CD D7 05    call cc_returning_05d7
 5484: FD E1       pop  iy
 5486: 30 1F       jr   nc,$54A7
 5488: DD CB 00 EE set  5,(ix+$00)

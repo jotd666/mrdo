@@ -8,10 +8,10 @@ input_dict = {
 
 }
 
-single_line_to_cc_protect = {0x27A,0x0287,0x053a,0x3f68,0x3f75,0x477c,0x47d5}
-remove_error_in_next_line = {0x27B,0x0289,0x1657,0x166a,0x2b29,0x3de7,0x3f69,
-0x3f76,0x477e,0x48d1,0x5cec}
-remove_error_in_prev_line = {0,0x014D,0x0138,0x141,0x37A}
+single_line_to_cc_protect = {0x27A,0x0287,0x053a,0x3f68,0x3f75,0x477c,0x47d5,0x3e45}
+remove_error_in_next_line = {0x27B,0x0289,0x1657,0x166a,0x2b29,0x3de7,0x3f69,0X3e46,
+0x3f76,0x477e,0x48d1,0x5cec,0x3f7b}
+remove_error_in_prev_line = {0,0x014D,0x0138,0x141,0x37A,0x2be0}
 line_to_push_cc_protect = {0x037a} | single_line_to_cc_protect
 line_to_pull_cc_protect = set() | single_line_to_cc_protect
 
@@ -317,6 +317,16 @@ with open(source_dir / "conv.s") as f:
             kill_code(lines,i,0x5800)
         elif address == 0x74ce:
             lines[i+2] = remove_error(lines[i+2])
+        elif address == 0x2bdc:
+            line = swap_lines(lines,i,i-1)
+        elif address == 0x3f74:
+            line += "\tsne\td7\n"
+        elif address == 0x3f7a:
+            line += "\ttst.b\td7\n"
+        elif address in {0x53b6,0x53cc}:
+            line = line.replace("move.w","movem.w") + "\tPUSH_SR\n"
+            lines[i+1] += "\tPOP_SR\n"
+            lines[i+3] = remove_error(lines[i+3])
         ###############################################
         if address in remove_error_in_prev_line:
             lines[i-1] = remove_error(lines[i-1].strip()+f" ({address:04x})")
