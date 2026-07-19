@@ -323,7 +323,7 @@ with open(source_dir / "conv.s") as f:
             line += "\tsne\td7\n"
         elif address == 0x3f7a:
             line += "\ttst.b\td7\n"
-        elif address in {0x53b6,0x53cc}:
+        elif address in {0x53b6,0x53cc,0x53c1,0x53dc,0x53f5}:
             line = line.replace("move.w","movem.w") + "\tPUSH_SR\n"
             lines[i+1] += "\tPOP_SR\n"
             lines[i+3] = remove_error(lines[i+3])
