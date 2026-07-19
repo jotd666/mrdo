@@ -8,12 +8,14 @@ input_dict = {
 
 }
 
-single_line_to_cc_protect = {0x27A,0x0287,0x053a,0x3f68,0x3f75,0x477c,0x47d5,0x3e45}
+single_line_to_cc_protect = {0x27A,0x0287,0x053a,0x3f68,0x3f75,0x477c,0x47d5,0x3e45,0x7c11}
 remove_error_in_next_line = {0x27B,0x0289,0x1657,0x166a,0x2b29,0x3de7,0x3f69,0X3e46,
-0x3f76,0x477e,0x48d1,0x5cec,0x3f7b}
-remove_error_in_prev_line = {0,0x014D,0x0138,0x141,0x37A,0x2be0}
-line_to_push_cc_protect = {0x037a} | single_line_to_cc_protect
-line_to_pull_cc_protect = set() | single_line_to_cc_protect
+0x3f76,0x477e,0x48d1,0x5cec,0x3f7b,0x3df6,0x3e04,0x3e12,0x3e5b,0x3e71,0x47d6,0x48bd,0x48e7,
+0x5486,0x7bf6}
+remove_error_in_prev_line = {0,0x014D,0x0138,0x141,0x37A,0x2be0,0x3df5,0x3E02,0x3e10}
+line_to_push_cc_protect = {0x037a,0x3e02,0x3e10,0x3e58,0x7bfc,0x7bf3,0x7c16} | single_line_to_cc_protect
+line_to_pull_cc_protect = {0x7c01,0x7c1b} | single_line_to_cc_protect
+line_to_pull_cc_prev_protect = {0X3e04,0X3e12,0x3e5b,0x7bf6}
 
 
 store_to_video = re.compile("GET_ADDRESS\s+(0x8\w\w\w|video_ram_d)",flags=re.I)   # game_specific
@@ -323,10 +325,20 @@ with open(source_dir / "conv.s") as f:
             line += "\tsne\td7\n"
         elif address == 0x3f7a:
             line += "\ttst.b\td7\n"
-        elif address in {0x53b6,0x53cc,0x53c1,0x53dc,0x53f5}:
+        elif address in {0x53b6,0x53cc,0x53c1,0x53dc,0x53f5,0x4168,
+        0x5159,0x5180}:
             line = line.replace("move.w","movem.w") + "\tPUSH_SR\n"
             lines[i+1] += "\tPOP_SR\n"
             lines[i+3] = remove_error(lines[i+3])
+        elif address in {0x022e,0x7be7,0x7bed,0x7bf3,0x7bfc,0X7c02,0x7c08,0x7c16,0x7c1c}:
+            lines[i-2] = remove_error(lines[i-2])
+        elif address in {0x47d4,0x0138,0x0141}:
+            # optim changed tst into CLR_XC_FLAGS because not followed by branch
+            # anyway, flags are already okay because of previous move
+            line = remove_instruction(lines,i)
+
+        if "[data]" in line:
+            line = line.replace("l_","0x")
         ###############################################
         if address in remove_error_in_prev_line:
             lines[i-1] = remove_error(lines[i-1].strip()+f" ({address:04x})")
@@ -345,6 +357,9 @@ with open(source_dir / "conv.s") as f:
         if address in line_to_push_cc_protect:
             # protect the sub instructions
             line = "\tPUSH_SR\n"+line
+        if address in line_to_pull_cc_prev_protect:
+            # protect the sub instructions
+            line = "\tPOP_SR\n"+line
 
         if "GET_ADDRESS" in line:
             val = line.split()[1].split(",")[0]
