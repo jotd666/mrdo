@@ -5,7 +5,9 @@ gamename = "mrdo"
 # game_specific: replace or remove I/O addresses
 # if not done it will write in ROM here!!
 input_dict = {
-
+"flipscreen_9800" : "",
+"sound_1_9801" : "",
+"sound_2_9802" : "",
 }
 
 single_line_to_cc_protect = {0x27A,0x0287,0x053a,0x3f68,0x3f75,0x477c,0x47d5,0x3e45,0x7c11}

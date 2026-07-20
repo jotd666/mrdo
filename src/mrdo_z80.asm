@@ -92,9 +92,11 @@ dsw_1_a002 = $a002
 dsw_2_a003 = $a003
 protection_byte_9803 = $9803
 nb_credits_e006 = $e006
+flipscreen_9800 = $9800
+sound_1_9801 = $9801
+sound_2_9802 = $9802
 
-
-reset_0000:  ; [global]
+reset_0000:
 0000: 31 80 EB    ld   sp,$EB80
 0003: C3 68 00    jp   $0068
 
@@ -102,13 +104,14 @@ reset_0000:  ; [global]
 
 0066: ED 45       retn
 
-0068: 3A 00 A0    ld   a,(port_1_a000)
+0068: 3A 00 A0    ld   a,(port_1_a000)	; [unchecked_address]
 006B: 47          ld   b,a
-006C: 3A 01 A0    ld   a,(port_2_a001)
+006C: 3A 01 A0    ld   a,(port_2_a001)	; [unchecked_address]
 006F: A0          and  b
 0070: E6 10       and  $10
-0072: CA AF 56    jp   z,$56AF
+0072: CA AF 56    jp   z,self_test_56af
 ; clear ram
+start_0075:  ; [global]
 0075: 21 00 E0    ld   hl,$E000
 0078: 11 01 E0    ld   de,$E001
 007B: 01 FF 0F    ld   bc,$0FFF
@@ -130,9 +133,9 @@ reset_0000:  ; [global]
 00A0: 3E 80       ld   a,$80
 00A2: 32 A1 E1    ld   ($E1A1),a
 00A5: AF          xor  a
-00A6: 32 00 98    ld   ($9800),a
+00A6: 32 00 98    ld   (flipscreen_9800),a
 00A9: ED 56       im   1
-00AB: FB          ei
+00AB: FB          ei			; allow irq
 00AC: 18 FE       jr   $00AC
 
 irq_00b8:   ; [global]
@@ -273,14 +276,14 @@ table_0156:
 	.word	$0D2A
 
 01A6: CD DE 01    call $01DE                                          
-01A9: 3A 01 A0    ld   a,(port_2_a001)
+01A9: 3A 01 A0    ld   a,(port_2_a001)		; [unchecked_address]
 01AC: 17          rla
 01AD: 38 15       jr   c,$01C4
 01AF: F5          push af
 01B0: 3A 03 E0    ld   a,($E003)
 01B3: A7          and  a
 01B4: 20 08       jr   nz,$01BE
-01B6: 3A 03 A0    ld   a,(dsw_2_a003)
+01B6: 3A 03 A0    ld   a,(dsw_2_a003)		; [unchecked_address]
 01B9: E6 0F       and  $0F
 01BB: CD FA 01    call $01FA
 01BE: 3E 03       ld   a,$03
@@ -291,7 +294,7 @@ table_0156:
 01C6: 3A 04 E0    ld   a,($E004)
 01C9: A7          and  a
 01CA: 20 0C       jr   nz,$01D8
-01CC: 3A 03 A0    ld   a,(dsw_2_a003)
+01CC: 3A 03 A0    ld   a,(dsw_2_a003)		; [unchecked_address]
 01CF: E6 F0       and  $F0
 01D1: 0F          rrca
 01D2: 0F          rrca
@@ -306,7 +309,7 @@ table_0156:
 01E2: A7          and  a
 01E3: 28 01       jr   z,$01E6
 01E5: 35          dec  (hl)
-01E6: 3A 00 A0    ld   a,(port_1_a000)
+01E6: 3A 00 A0    ld   a,(port_1_a000)	; [unchecked_address]
 01E9: 17          rla
 01EA: 38 02       jr   c,$01EE
 01EC: 36 0A       ld   (hl),$0A
@@ -328,7 +331,7 @@ table_0156:
 0202: 3A 02 E0    ld   a,($E002)
 0205: A7          and  a
 0206: C0          ret  nz
-0207: 3A 03 A0    ld   a,(dsw_2_a003)
+0207: 3A 03 A0    ld   a,(dsw_2_a003)		; [unchecked_address]
 020A: 47          ld   b,a
 020B: E6 F0       and  $F0
 020D: C8          ret  z
@@ -1251,7 +1254,7 @@ cc_returning_05d7:
 0D33: E6 0F       and  $0F
 0D35: 20 13       jr   nz,$0D4A
 0D37: DD CB 00 AE res  5,(ix+$00)
-0D3B: 3A 00 A0    ld   a,(port_1_a000)
+0D3B: 3A 00 A0    ld   a,(port_1_a000)	; [unchecked_address]
 0D3E: CB 77       bit  6,a
 0D40: CA 72 0F    jp   z,$0F72
 0D43: CB 6F       bit  5,a
@@ -1437,11 +1440,11 @@ cc_returning_05d7:
 0EDB: C9          ret
 0EDC: FE 01       cp   $01
 0EDE: 20 0A       jr   nz,$0EEA
-0EE0: 3A 00 A0    ld   a,(port_1_a000)
+0EE0: 3A 00 A0    ld   a,(port_1_a000)	; [unchecked_address]
 0EE3: CB 6F       bit  5,a
 0EE5: CA 9C 0F    jp   z,$0F9C
 0EE8: 18 0D       jr   $0EF7
-0EEA: 3A 00 A0    ld   a,(port_1_a000)
+0EEA: 3A 00 A0    ld   a,(port_1_a000)	; [unchecked_address]
 0EED: CB 77       bit  6,a
 0EEF: CA 72 0F    jp   z,$0F72
 0EF2: CB 6F       bit  5,a
@@ -1549,7 +1552,7 @@ cc_returning_05d7:
 0FE4: 32 00 E3    ld   ($E300),a
 0FE7: 32 01 E0    ld   ($E001),a
 0FEA: 3A 00 E0    ld   a,($E000)
-0FED: 32 00 98    ld   ($9800),a
+0FED: 32 00 98    ld   (flipscreen_9800),a
 0FF0: 3E 25       ld   a,$25
 0FF2: CD EA 02    call $02EA
 0FF5: 3E 21       ld   a,$21
@@ -1915,7 +1918,7 @@ cc_returning_05d7:
 1482: CB 6E       bit  5,(hl)
 1484: 28 05       jr   z,$148B
 1486: EE 01       xor  $01
-1488: 32 00 98    ld   ($9800),a
+1488: 32 00 98    ld   (flipscreen_9800),a
 148B: 32 00 E0    ld   ($E000),a
 148E: FD 21 97 E0 ld   iy,$E097
 1492: E6 10       and  $10
@@ -1943,7 +1946,7 @@ cc_returning_05d7:
 14CA: 3A 00 E0    ld   a,($E000)
 14CD: E6 26       and  $26
 14CF: 32 00 E0    ld   ($E000),a
-14D2: 32 00 98    ld   ($9800),a
+14D2: 32 00 98    ld   (flipscreen_9800),a
 14D5: AF          xor  a
 14D6: 32 01 E0    ld   ($E001),a
 14D9: DD 36 00 00 ld   (ix+$00),$00
@@ -2306,11 +2309,11 @@ cc_returning_05d7:
 17F8: DD 36 0A 00 ld   (ix+$0a),$00
 17FC: CD 60 18    call $1860
 17FF: C9          ret
-1800: 21 00 A0    ld   hl,port_1_a000
+1800: 21 00 A0    ld   hl,port_1_a000	; [unchecked_address]
 1803: 3A 00 E0    ld   a,($E000)
 1806: 1F          rra
 1807: D0          ret  nc
-1808: 21 01 A0    ld   hl,port_2_a001
+1808: 21 01 A0    ld   hl,port_2_a001	; [unchecked_address]
 180B: C9          ret
 180C: 11 36 89    ld   de,$8936
 180F: 21 17 E0    ld   hl,$E017
@@ -3508,10 +3511,10 @@ cc_returning_05d7:
 2335: 21 00 E0    ld   hl,$E000
 2338: CB 7E       bit  7,(hl)
 233A: C8          ret  z
-233B: 3A 00 A0    ld   a,(port_1_a000)
+233B: 3A 00 A0    ld   a,(port_1_a000)	; [unchecked_address]
 233E: CB 46       bit  0,(hl)
 2340: C8          ret  z
-2341: 3A 01 A0    ld   a,(port_2_a001)
+2341: 3A 01 A0    ld   a,(port_2_a001)	; [unchecked_address]
 2344: C9          ret
 2345: DD 7E 0D    ld   a,(ix+$0d)
 2348: A7          and  a
@@ -9082,6 +9085,8 @@ cc_returning_540b:
 56AC: 77          ld   (hl),a
 56AD: 1A          ld   a,(de)
 56AE: C9          ret
+
+self_test_56af:
 56AF: 0E 22       ld   c,$22
 56B1: AF          xor  a
 56B2: 11 04 00    ld   de,$0004
@@ -9267,12 +9272,12 @@ cc_returning_540b:
 5800: 31 80 EB    ld   sp,$EB80
 5803: 21 29 58    ld   hl,$5829
 5806: CD 03 04    call $0403
-5809: 21 01 98    ld   hl,$9801
+5809: 21 01 98    ld   hl,sound_1_9801
 580C: 36 9F       ld   (hl),$9F
 580E: 36 BF       ld   (hl),$BF
 5810: 36 DF       ld   (hl),$DF
 5812: 36 FF       ld   (hl),$FF
-5814: 21 02 98    ld   hl,$9802
+5814: 21 02 98    ld   hl,sound_2_9802
 5817: 36 9F       ld   (hl),$9F
 5819: 36 BF       ld   (hl),$BF
 581B: 36 DF       ld   (hl),$DF
@@ -9296,15 +9301,15 @@ cc_returning_540b:
 5847: C5          push bc
 5848: D5          push de
 5849: 21 B9 8E    ld   hl,$8EB9
-584C: 3A 00 A0    ld   a,(port_1_a000)
+584C: 3A 00 A0    ld   a,(port_1_a000)	; [unchecked_address]
 584F: CD 77 58    call $5877
-5852: 3A 01 A0    ld   a,(port_2_a001)
+5852: 3A 01 A0    ld   a,(port_2_a001)	; [unchecked_address]
 5855: CD 77 58    call $5877
 5858: 21 07 8E    ld   hl,$8E07
-585B: 3A 02 A0    ld   a,(dsw_1_a002)
+585B: 3A 02 A0    ld   a,(dsw_1_a002)	; [unchecked_address]
 585E: CD 86 58    call $5886
 5861: 21 06 8E    ld   hl,$8E06
-5864: 3A 03 A0    ld   a,(dsw_2_a003)
+5864: 3A 03 A0    ld   a,(dsw_2_a003)	; [unchecked_address]
 5867: CD 86 58    call $5886
 586A: D1          pop  de
 586B: C1          pop  bc
@@ -9445,10 +9450,10 @@ cc_returning_540b:
 5AE1: 3E 9F       ld   a,$9F
 5AE3: CB 00       rlc  b
 5AE5: 38 03       jr   c,$5AEA
-5AE7: 32 01 98    ld   ($9801),a
+5AE7: 32 01 98    ld   (sound_1_9801),a
 5AEA: CB 00       rlc  b
 5AEC: 38 03       jr   c,$5AF1
-5AEE: 32 02 98    ld   ($9802),a
+5AEE: 32 02 98    ld   (sound_2_9802),a
 5AF1: C6 20       add  a,$20
 5AF3: 30 EE       jr   nc,$5AE3
 5AF5: C9          ret
@@ -9623,10 +9628,10 @@ cc_returning_540b:
 5C0A: FD 19       add  iy,de
 5C0C: 18 F3       jr   $5C01
 5C0E: C5          push bc
-5C0F: 01 01 98    ld   bc,$9801
+5C0F: 01 01 98    ld   bc,sound_1_9801
 5C12: CB 47       bit  0,a
 5C14: 28 03       jr   z,$5C19
-5C16: 01 02 98    ld   bc,$9802
+5C16: 01 02 98    ld   bc,sound_2_9802
 5C19: E6 06       and  $06
 5C1B: 87          add  a,a
 5C1C: 87          add  a,a

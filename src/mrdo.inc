@@ -462,7 +462,10 @@ get_address:
 	jra		1f
 0:
 	cmp.l	#0x9100,a0
-	jcs		0f
+	jcs		1f
+	cmp.l	#0xE000,a0
+	jcc		1f
+	jbsr	osd_get_last_known_pc
 	BREAKPOINT	"loading 90xx RAM in a0, pc in D7"
 
 1:

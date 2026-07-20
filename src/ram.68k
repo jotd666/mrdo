@@ -18,8 +18,7 @@
 	.global	aprime
 	.global	regscopy
 	.ifeq	OPT_ALIGNED_MEMORY
-	.global	ram_buffer
-	.global	rom_buffer
+	.global	mem_buffer
 	.else
 	.global rom_start_0000
 	.global	dev_ram_buffer
@@ -40,11 +39,9 @@ user_stack_top:
 stack_top:
 	.skip	0x100*32		| 256 bytes for each task natively (originally 16 bytes only)
 	
-ram_buffer:
+mem_buffer:
 	.ifeq	OPT_ALIGNED_MEMORY
-	.skip	ROM_START
-rom_buffer:
-	.skip	0x10000-ROM_START
+	.skip	0x10000
 	.else
 dev_ram_buffer:
 	.skip	0x20000
