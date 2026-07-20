@@ -8,12 +8,13 @@ input_dict = {
 "flipscreen_9800" : "",
 "sound_1_9801" : "",
 "sound_2_9802" : "",
+"protection_byte_9803" : "",
 }
 
 single_line_to_cc_protect = {0x27A,0x0287,0x053a,0x3f68,0x3f75,0x477c,0x47d5,0x3e45,0x7c11}
 remove_error_in_next_line = {0x27B,0x0289,0x1657,0x166a,0x2b29,0x3de7,0x3f69,0X3e46,
-0x3f76,0x477e,0x48d1,0x5cec,0x3f7b,0x3df6,0x3e04,0x3e12,0x3e5b,0x3e71,0x47d6,0x48bd,0x48e7,
-0x5486,0x7bf6}
+0x3f76,0x477e,0x48d1,0x5cec,0x3f7b,0x3df6,0x3e04,0x3e12,0x3e5b,0x3e71,0x47d6,0x48bd,0x48e7,0x2ada,
+0x5486,0x7bf6,0x2ae2,0x2aea,0x2af2}
 remove_error_in_prev_line = {0,0x014D,0x0138,0x141,0x37A,0x2be0,0x3df5,0x3E02,0x3e10}
 line_to_push_cc_protect = {0x037a,0x3e02,0x3e10,0x3e58,0x7bfc,0x7bf3,0x7c16} | single_line_to_cc_protect
 line_to_pull_cc_protect = {0x7c01,0x7c1b} | single_line_to_cc_protect
@@ -255,13 +256,12 @@ with open(source_dir / "conv.s") as f:
             line = change_instruction("lea\ttable_0156,a4",lines,i)
         elif address == 0x00e9:
             line = """
-    MAKE_HL    a0                                 | [$00e9: ld   e,(hl)]
-    move.l    (a0)+,d4                             | [...] get parameter
+    move.l    (a4)+,d4                             | [$00e9: ld   e,(hl)] get parameter
     lea    (a6,d4.l),a2 |  [$00ee: pop  ix] now IX is the parameter
-    move.l    (a0)+,a4                  | now a4 is the function
+    move.l    (a4)+,a0                  | now a4 is the function
     addq      #4,d6
     MAKE_H
-    btst.b    #7,(0x00,a2)                        | [$00f4: bit  7,(ix+$00)]
+    btst.b    #7,(a2)                        | [$00f4: bit  7,(ix+$00)]
     jeq    l_0108                                 | [$00f8: jr   z,$0108]
     MAKE_BC_NO_AR                              | [$00fa: push bc]
     move.w    d2,-(a7)                            | [...]
@@ -269,7 +269,7 @@ with open(source_dir / "conv.s") as f:
     move.w    d6,-(a7)                            | [...]
     move.l    a3,-(a7)                            | [$00fc: push iy]
     pea    return_0104(pc)   | return address
-    jmp       (a4)
+    jmp       (a0)
 """
 
             kill_code(lines,i,0x0103)
@@ -338,7 +338,9 @@ with open(source_dir / "conv.s") as f:
             # optim changed tst into CLR_XC_FLAGS because not followed by branch
             # anyway, flags are already okay because of previous move
             line = remove_instruction(lines,i)
-
+        elif address == 0x049A:
+            # remove protection test
+            line = remove_instruction(lines,i)
         if "[data]" in line:
             line = line.replace("l_","0x")
         ###############################################

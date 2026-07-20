@@ -1246,7 +1246,7 @@ cc_returning_05d7:
 0C37: 10 FB       djnz $0C34
 0C39: C9          ret
 
-0D2A: 3A 03 A0    ld   a,(dsw_2_a003)
+0D2A: 3A 03 A0    ld   a,(dsw_2_a003)	; [unchecked_address]
 0D2D: 47          ld   b,a
 0D2E: E6 F0       and  $F0
 0D30: 28 05       jr   z,$0D37
@@ -1286,7 +1286,7 @@ cc_returning_05d7:
 0D7E: CD 85 04    call $0485
 0D81: CD 6E 70    call $706E
 0D84: CD B0 11    call $11B0
-0D87: 3A 03 A0    ld   a,(dsw_2_a003)
+0D87: 3A 03 A0    ld   a,(dsw_2_a003)	; [unchecked_address]
 0D8A: 47          ld   b,a
 0D8B: E6 F0       and  $F0
 0D8D: 28 34       jr   z,$0DC3
@@ -1295,14 +1295,14 @@ cc_returning_05d7:
 0D92: 28 2F       jr   z,$0DC3
 0D94: 21 2C 11    ld   hl,$112C
 0D97: CD 03 04    call $0403
-0D9A: 3A 03 A0    ld   a,(dsw_2_a003)
+0D9A: 3A 03 A0    ld   a,(dsw_2_a003)	; [unchecked_address]
 0D9D: E6 0F       and  $0F
 0D9F: F5          push af
 0DA0: 11 2C 89    ld   de,$892C
 0DA3: CD FB 0F    call $0FFB
 0DA6: F1          pop  af
 0DA7: 47          ld   b,a
-0DA8: 3A 03 A0    ld   a,(dsw_2_a003)
+0DA8: 3A 03 A0    ld   a,(dsw_2_a003)	; [unchecked_address]
 0DAB: E6 F0       and  $F0
 0DAD: 0F          rrca
 0DAE: 0F          rrca
