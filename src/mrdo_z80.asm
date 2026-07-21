@@ -742,11 +742,11 @@ table_0156:
 0485: 11 70 88    ld   de,$8870
 0488: 21 47 05    ld   hl,$0547
 048B: 3E A5       ld   a,$A5
-048D: 12          ld   (de),a		; [video_address]
+048D: 12          ld   (de),a		; [unchecked_address] (actually it's not visible)
 048E: 13          inc  de
 048F: 06 04       ld   b,$04
 0491: 7E          ld   a,(hl)
-0492: 12          ld   (de),a		; [video_address]
+0492: 12          ld   (de),a		; [unchecked_address]
 0493: 23          inc  hl
 0494: 3A 03 98    ld   a,(protection_byte_9803)
 0497: E6 7E       and  $7E

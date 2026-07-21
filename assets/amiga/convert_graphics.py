@@ -555,7 +555,7 @@ if dump_it:
 
 
 sprite_sheet_dict = {i:img for i,img in enumerate(generate_tiles.doit_sprites_16x16())}
-fg_tile_sheet_dict = {i:img for i,img in enumerate(generate_tiles.doit_tiles_8x8_set_1())}
+fg_tile_sheet_dict = {i:img for i,img in enumerate(generate_tiles.doit_tiles_8x8_set_0())}
 
 ###############
 # foreground
@@ -639,7 +639,7 @@ for p in [fg_tile_palette]:
 # background
 ###############
 
-bg_tile_sheet_dict = {i:img for i,img in enumerate(generate_tiles.doit_tiles_8x8_set_0())}
+bg_tile_sheet_dict = {i:img for i,img in enumerate(generate_tiles.doit_tiles_8x8_set_1())}
 
 bg_tile_cluts = {}
 read_used_tiles("bg_used_tiles",bg_tile_cluts,BG_NB_TILES,BG_NB_CLUTS)

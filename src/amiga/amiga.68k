@@ -2575,15 +2575,34 @@ video_byte_dirty:
 	.endif
 	jmi		osd_video_dirty_out
 
+	move.w	d7,d2
+	and.w	#VIDEO_PAGE_SIZE-1,d2	| address within tile codes (not colors)
+	cmp.w	#0x81,d2
+	jcc		0f
+	* tiles with lower addresses aren't shown
+	rts
+0:
+
 	move.l	a6,a0
 	add.l	#VIDEO_ADDRESS,a0
-	move.b	(a0,d7.w),d0		| code
-	add.w	#VIDEO_PAGE_SIZE,a0
-	move.b	(a0,d7.w),d1		| attribute
+	
 	
 	cmp.w	#VIDEO_PAGE_SIZE*2,d7
-	jcs		update_bg_tile
-	sub.w	#VIDEO_PAGE_SIZE*2,d7
+	jcc		0f
+	
+	move.b	(a0,d2.w),d1		| attribute
+	add.w	#VIDEO_PAGE_SIZE,a0
+	move.b	(a0,d2.w),d0		| code
+	jra		update_bg_tile
+0:
+	* fg tiles
+
+	add.w	#VIDEO_PAGE_SIZE*2,a0
+
+	move.b	(a0,d2.w),d1		| attribute
+	add.w	#VIDEO_PAGE_SIZE,a0
+	move.b	(a0,d2.w),d0		| code
+
 	jra		update_fg_tile
 
 
@@ -2612,11 +2631,7 @@ compute_tile_xy:
 * < D1: color code
 
 update_fg_tile:	
-	cmp.w	#0x81,d7
-	jcc		0f
-	* tiles with address < 0x8081 aren't shown
-	rts
-0:
+	
 	moveq	#0,d2			| mask up to 255
 	move.b	d0,d2			| tile code
 	moveq	#0,d3
@@ -2629,6 +2644,7 @@ update_fg_tile:
 	
 	bclr	#6,d3			| ATM force layer 0 disregarded
 	
+
 	.ifne	OPT_ENABLE_LOGGING
 	lea		fg_character_log_table,a0
 	movem.l	d2-d3,-(a7)
@@ -2648,11 +2664,6 @@ update_fg_tile:
 * < D1: color code
 
 update_bg_tile:	
-	cmp.w	#0x81,d7
-	jcc		0f
-	* tiles with address < 0x8081 aren't shown
-	rts
-0:
 	moveq	#0,d2			| mask up to 255
 	move.b	d0,d2			| tile code
 	moveq	#0,d3
