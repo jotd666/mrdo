@@ -130,7 +130,8 @@ FG_SCREEN_SIZE = FG_SCREEN_PLANE_SIZE*NB_BOB_PLANES
 FG_SCREEN_PLANE_SIZE = FG_NB_BYTES_PER_ROW*NB_PLAYFIELD_LINES
 	.endif
 	
-VIDEO_ADDRESS = 0
+VIDEO_ADDRESS = 0x8000
+VIDEO_PAGE_SIZE = 0x400
 
 NB_HOST_SPRITES = 8
 
@@ -771,6 +772,28 @@ call_bcpl:
 
 
 
+cache_bg_tiles_address:
+	
+	* cache: address => tile-accurate X,Y
+	lea		bg_tile_address_table,a0
+	move.w	#0,d7
+0:
+	move.w	d7,d0
+	and.w	#0x1F,d0
+	lsl.w	#8,d0
+	move.w	d7,d1
+	lsr.w	#5,d1
+	neg.w	d1
+	add.w	#0x1F,d1
+	
+	or.b	d1,d0
+	move.w	d0,(a0)+
+	addq	#1,d7
+	cmp.w	#0x400,d7
+	jne		0b
+	
+	rts
+	
 	
 * zero all registers but 6809 stack pointer
 cpu_init:
@@ -949,7 +972,6 @@ level3_interrupt:
 	bsr		switch_screen_buffers
 	.endif
 
-	jbsr		really_update_tiles
 	
 23:
 	jbsr	read_inputs
@@ -1144,63 +1166,11 @@ set_status_bitplanes:
 	lea		tiles_bitplanes+2,a0				| pointer on first bitplane
 	move.l	a4,d0				| base address			
 	jbsr	set_background_bitplanes
-	
-	move.l		background_ptr,a4
-	move.l	a4,d0				| base address	
-	lea		tiles_bitplanes_end+2,a0				| pointer on first bitplane	
-	add.l	#BG_NB_BYTES_PER_ROW*34*8,d0
-	jbsr	set_background_bitplanes
-	
+		
 	rts
 	
 	
 	
-* we're going to scan for dirty tiles (0x800 array)
-* an optimization is to also have flags for 0x20-size regions
-* if the value is 0, then no need to try to refresh the next
-* 0x20 tiles. If screen tiles don't change, we read 0x20 bytes
-* instead of 0x800 each frame.
-
-really_update_tiles:
-	.ifdef OCS_VERSION
-	lea		_custom,a5
-	WAIT_BLIT  | no need in AGA: dual playfield
-	.endif
-	GET_MEMORY_START_IN_A6
-	lea		(VIDEO_ADDRESS,a6),a6
-	lea		(VIDEO_ADDRESS+0x800,a6),a5
-	lea		tiles_row_flags(pc),a1
-	moveq	#0,d3
-3:
-	tst.b	(a1)+
-	jeq		2f
-	lea		tiles_refresh_table(pc),a0
-	subq.b	#1,(-1,a1)
-	move.w	#0x3F,d2		| 0X40 cols!
-	move.w	d3,d7
-	lsl.w	#6,d7		| times 64, get offset for big dirty table
-	add.w	d7,a0
-0:
-
-	tst.b	(a0)+
-	jeq		1f
-	subq.b	#1,(-1,a0)	| decrease dirty counter
-	* read tile & color codes from RAM
-
-	move.b	(a6,d7.w),d0		| code
-	move.b	(a5,d7.w),d1		| color/attribute
-
-	movem.l	d2/d3/d7/a0/a1/a5,-(a7)
-	jbsr	update_bg_tile
-	movem.l	(a7)+,d2/d3/d7/a0/a1/a5
-1:
-	addq	#1,d7
-	dbf	d2,0b
-2:
-	addq	#1,d3
-	cmp.w	#0x20,d3
-	jne		3b
-	rts
 	
 
 * void mappy_state::mappy_draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect, uint8_t *spriteram_base)
@@ -1918,8 +1888,12 @@ osd_dump_logs:
 	jbsr	resload_SaveFile(a2)
 	
 	move.l	_resload(pc),a2
-	lea		character_log_table,a1
-	lea		character_log_name(pc),a0
+	lea		bg_character_log_table,a1
+	lea		bg_character_log_name(pc),a0
+	move.l	#NB_TILE_CLUTS*NB_POSSIBLE_TILES,d0
+	jbsr	resload_SaveFile(a2)
+	lea		fg_character_log_table,a1
+	lea		fg_character_log_name(pc),a0
 	move.l	#NB_TILE_CLUTS*NB_POSSIBLE_TILES,d0
 	jbsr	resload_SaveFile(a2)
 		
@@ -1958,8 +1932,10 @@ sprites_ram_name_1000:
 
 sprite_log_name:
 	.asciz	"used_sprites"
-character_log_name:
-	.asciz	"used_tiles"
+bg_character_log_name:
+	.asciz	"bg_used_tiles"
+fg_character_log_name:
+	.asciz	"fg_used_tiles"
 cpu_log_name:
 	.asciz	"cpu_log"
 	.align	2
@@ -2245,6 +2221,10 @@ bob_plane_size:
 blitter_modulo:
 	.word	0
 	
+bg_tile_address_table:
+	.skip	0x400*2
+
+
 sprite_drawn_table:
 	.skip	NB_TARGET_SPRITES
 sprite_location_table:
@@ -2519,6 +2499,8 @@ platform_init:
 	moveq	#1,d0	| PAL
 	jbsr		_mt_install_cia
 	
+	jbsr	cache_bg_tiles_address
+
     rts
 	
 
@@ -2560,29 +2542,15 @@ osd_disable_interrupts:
 	move.w	#0x0030,_custom+intena
 	rts
 
-* a0=screen virtual address (preserved), d0=tile (preserved)
-* a6=ram base
-* should preserve all registers
-
-osd_video_word_dirty:
-	OSD_ENTER
-	movem.l	d0/d1/d7/a0/a1,-(a7)
-	jbsr	video_byte_dirty
-	tst.b	d7
-	jeq		0f				| out of range: ignore
-	move.b	d7,(1,a0)		| next byte too
-0:
-	movem.l	(a7)+,d0/d1/d7/a0/a1
-	OSD_EXIT
-	rts	
-
-
 	
+* < A6: base memory
+* < A0: written address
+
 osd_video_byte_dirty:
 	OSD_ENTER
-	movem.l	d0/d1/d7/a0/a1,-(a7)
+	movem.l	d0-d7/a0-a3/a6,-(a7)
 	jbsr	video_byte_dirty
-	movem.l	(a7)+,d0/d1/d7/a0/a1
+	movem.l	(a7)+,d0-d7/a0-a3/a6
 	OSD_EXIT
 	rts	
 
@@ -2592,41 +2560,33 @@ video_byte_dirty:
 
 	* sometimes game uses same code to set video or non video
 	* memory. We don't want to be alerted
-	cmp.l	#VIDEO_ADDRESS+0x1000,d7
+	cmp.l	#VIDEO_ADDRESS+VIDEO_PAGE_SIZE*4,d7
 	jcc		osd_video_dirty_out
 
 	* remove offset
 	.ifne	VIDEO_ADDRESS
+	.if VIDEO_ADDRESS < 0x8000
 	sub.w	#VIDEO_ADDRESS,d7
+	.else
+	sub.l	#VIDEO_ADDRESS,d7
+	.endif
 	.else
 	tst.w	d7
 	.endif
 	jmi		osd_video_dirty_out
 
-
+	move.l	a6,a0
+	add.l	#VIDEO_ADDRESS,a0
+	move.b	(a0,d7.w),d0		| code
+	add.w	#VIDEO_PAGE_SIZE,a0
+	move.b	(a0,d7.w),d1		| attribute
 	
-	* now set the flag for tile refresh in copper interrupt (so it doesn't
-	* interfere with blits. This game uses a lot of tile animation in the background
-	* as opposed to most games, so updating in real tile isn't an option and kills
-	* the smoothness even in double buffering mode)
-
-	and.w	#0x7FF,d7
+	cmp.w	#VIDEO_PAGE_SIZE*2,d7
+	jcs		update_bg_tile
+	sub.w	#VIDEO_PAGE_SIZE*2,d7
+	jra		update_fg_tile
 
 
-	lea		tiles_refresh_table(pc),a0
-	add.w	d7,a0
-	lsr.w	#6,d7	| get row for faster operation
-	lea		tiles_row_flags(pc),a1
-	add.w	d7,a1
-	* now a0 points on the tiles refresh table, mark it dirty
-*	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
-*	moveq	#2,d7
-*	.else
-	moveq	#1,d7		| background tiles aren't double buffered here!
-*	.endif
-	move.b	d7,(a0)
-	move.b	d7,(a1)
-	rts
 osd_video_dirty_out:
 	moveq	#0,d7
 	rts
@@ -2647,26 +2607,66 @@ compute_tile_xy:
 	.endif
 
 
-
-
-*	int const attr = m_colorram[tile_index];
-*	int const code = m_videoram[tile_index] + ((attr & 0xc0) << 2);
-*	int const color = attr & 0x0f;
-
-
-* < D7: 0-0x800 address
+* < D7: 0-0x400 address
 * < D0: tile code
 * < D1: color code
 
-
-update_bg_tile:	
+update_fg_tile:	
+	cmp.w	#0x81,d7
+	jcc		0f
+	* tiles with address < 0x8081 aren't shown
+	rts
+0:
 	moveq	#0,d2			| mask up to 255
 	move.b	d0,d2			| tile code
 	moveq	#0,d3
 	move.b	d1,d3			| CLUT & tile code & flags
 
+	bclr	#7,d3
+	jeq		0f
+	bset	#8,d2			| bit 7 of attribute => add 0x100 to code
+0:
+	
+	bclr	#6,d3			| ATM force layer 0 disregarded
+	
 	.ifne	OPT_ENABLE_LOGGING
-	lea		character_log_table,a0
+	lea		fg_character_log_table,a0
+	movem.l	d2-d3,-(a7)
+	and.w	#TILE_CLUT_MASK,d3
+	lsl.w	#TILE_CLUT_POW2,d2		| 64 cluts
+	add.w	d2,d3		| clut offset
+
+	st.b	(a0,d3.l)
+	movem.l	(a7)+,d2-d3
+	.endif
+	rts
+	
+	
+
+* < D7: 0-0x400 address
+* < D0: tile code
+* < D1: color code
+
+update_bg_tile:	
+	cmp.w	#0x81,d7
+	jcc		0f
+	* tiles with address < 0x8081 aren't shown
+	rts
+0:
+	moveq	#0,d2			| mask up to 255
+	move.b	d0,d2			| tile code
+	moveq	#0,d3
+	move.b	d1,d3			| CLUT & tile code & flags
+
+	bclr	#7,d3
+	jeq		0f
+	bset	#8,d2			| bit 7 of attribute => add 0x100 to code
+0:
+	
+	bclr	#6,d3			| ATM force layer 0 disregarded
+	
+	.ifne	OPT_ENABLE_LOGGING
+	lea		bg_character_log_table,a0
 	movem.l	d2-d3,-(a7)
 	and.w	#TILE_CLUT_MASK,d3
 	lsl.w	#TILE_CLUT_POW2,d2		| 64 cluts
@@ -2676,8 +2676,10 @@ update_bg_tile:
 	movem.l	(a7)+,d2-d3
 	.endif
 
-	lea		tiles_layout,a0
-	* layout is a bloody nightmare, directly fetch
+	rts
+	
+	lea		bg_tile_address_table,a0
+	* directly fetch
 	* the decoded X,Y values from a pre-generated table
 
 	.ifdef	NO68020
@@ -2690,8 +2692,6 @@ update_bg_tile:
 	move.w	(a0)+,d0
 	jmi		2f
 	move.w	(a0),d1
-	
-
 	
 	
 	* updating bitplanes
@@ -2724,8 +2724,8 @@ update_bg_tile:
 	add.w	d0,a3
 	.endif
 	
-	cmp.b	#0x20,d2
-	jeq		11f				| optim: blank tile
+	*cmp.b	#0x20,d2
+	*jeq		11f				| optim: blank tile
 	lea		character_table,a0
 	.ifdef	NO68020
 	add.w	d2,d2
@@ -2949,9 +2949,6 @@ mirror_jump_table:
 mirror_bits:
 	.include "mirror_bits.68k"
 
-tiles_layout:
-	.include "tiles_layout.68k"
-
 	
 * < d0.w: x
 * < d1.w: y
@@ -3041,6 +3038,8 @@ set_bob_bitplanes:
     addq.w  #8,a0
     add.l d2,d0
     dbf d1,1b
+	
+	
 	movem.l	(a7)+,a0-a1/d0-d2
     rts
 	.endif
@@ -3911,8 +3910,12 @@ sprite_log_table:
 	* 16 cluts, 256 tiles
 	* a lot of combinations aren't used (fortunately!)
 	.skip	NB_SPRITE_CLUTS*NB_POSSIBLE_SPRITES
-character_log_table:
-	* 64 cluts, 256 tiles
+bg_character_log_table:
+	* 64 cluts, 512 tiles
+	* a lot of combinations aren't used (fortunately!)
+	.skip	NB_TILE_CLUTS*NB_POSSIBLE_TILES
+fg_character_log_table:
+	* 64 cluts, 512 tiles
 	* a lot of combinations aren't used (fortunately!)
 	.skip	NB_TILE_CLUTS*NB_POSSIBLE_TILES
 
@@ -4068,14 +4071,6 @@ intreq_block_game:
 	.word	0x0801,0xFFFE		| must wait a bit else bigger wait doesn't work
 	.word	0x2C01,0xFFFE
 
-
-
-tiles_bitplanes_end:
-	.ifdef	OCS_VERSION
-	DECL_BITPLANES	0,4	
-	.else
-	DECL_EVEN_BITPLANES	4,4
-	.endif
 
 	| no bobs from now on, get a LOT of drawing time
 	.word	 intreq,0x8010

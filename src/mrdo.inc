@@ -453,22 +453,23 @@ ldir_unchecked:
 
 get_address:
 	.ifndef	RELEASE
-	cmp.l	#0x9000,a0
-	jcs		0f
-	cmp.l	#0x8000,a0
-	jcc		0f
-	jbsr	osd_get_last_known_pc
-	BREAKPOINT	"loading video RAM in a0, pc in D7"
-	jra		1f
-0:
 	cmp.l	#0x9100,a0
 	jcs		1f
 	cmp.l	#0xE000,a0
-	jcc		1f
+	jcc		2f
 	jbsr	osd_get_last_known_pc
 	BREAKPOINT	"loading 90xx RAM in a0, pc in D7"
-
 1:
+	cmp.l	#0x9000,a0
+	jcc		2f			| sprite RAM => ok
+	cmp.l	#0x8000,a0
+	jcs		0f			| ROM => ok
+	jbsr	osd_get_last_known_pc
+	BREAKPOINT	"loading video RAM in a0, pc in D7"
+	jra		2f
+0:
+
+2:
 	.endif
 	GET_UNCHECKED_ADDRESS_FUNC	a0
 	rts

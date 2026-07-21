@@ -57,22 +57,6 @@ def is_pre_mirrored(prefix,context):
     # pre-mirror only in some levels
     return context in pre_mirror
 
-def is_in_level(prefix,context):
-    return True
-
-    pc = sprites_per_level.get(prefix)
-    if not pc:
-        # not listed: in all levels & contextes
-        return True
-    levels = pc["levels"]
-    if not levels:
-        # also included in all levels
-        return True
-    if context is None:
-        # context none: global, pc not found or : include
-        return not levels
-    # included only if context defined and matches
-    return not levels or context in levels
 
 def dump_bob_layer(sprite_table,f,relative_root=None,context=None):
     if relative_root:
@@ -316,11 +300,11 @@ all_tile_cluts = False
 sprite_cluts = {}
 fg_tile_cluts = {}
 
-total_nb_colors = 64
+total_nb_colors = 16
 
 read_used_tiles("fg_used_tiles",fg_tile_cluts,FG_NB_TILES,FG_NB_CLUTS)
 
-read_used_tiles("used_sprites",sprite_cluts,SPRITE_NB_TILES,SPRITE_NB_CLUTS)
+#read_used_tiles("used_sprites",sprite_cluts,SPRITE_NB_TILES,SPRITE_NB_CLUTS)
 
 # add "used" property for other sprite
 for g in group_sprite_pairs:
@@ -571,14 +555,13 @@ if dump_it:
 
 
 sprite_sheet_dict = {i:img for i,img in enumerate(generate_tiles.doit_sprites_16x16())}
-fg_tile_sheet_dict = {i:img for i,img in enumerate(generate_tiles.doit_tiles_8x8())}
+fg_tile_sheet_dict = {i:img for i,img in enumerate(generate_tiles.doit_tiles_8x8_set_1())}
 
 ###############
 # foreground
-# not so simple as we need to separate tiles for better colors
 ###############
-fg_tile_upper_palette = set()  # mostly alphanum + title
-fg_tile_upper_set_list = []
+fg_tile_palette = set()  # mostly alphanum + title
+fg_tile_set_list = []
 
 
 for i,tsd in fg_tile_sheet_dict.items():
@@ -595,68 +578,68 @@ for i,tsd in fg_tile_sheet_dict.items():
         tp = set()
         if tile:
             tp = set(bitplanelib.palette_extract(tile))
-            fg_tile_upper_palette.update(tp)
+            fg_tile_palette.update(tp)
             upper_tile_set[j] = tile
 
-    fg_tile_upper_set_list.append(upper_tile_set)
+    fg_tile_set_list.append(upper_tile_set)
 
 ### we'll quantize manually, 21 FG colors => 18
 ##fg_replacement_dict = {(174,157,112):(188,157,112),
 ##(45,31,0):black,
 ##(188,174,174):(174,174,174),
 ##}
-##apply_color_replacement(fg_tile_upper_set_list,fg_replacement_dict)
+##apply_color_replacement(fg_tile_set_list,fg_replacement_dict)
 
 ### recompute new fg palette
-##fg_tile_upper_palette = set()
+##fg_tile_palette = set()
 ##
-##for tile_set in fg_tile_upper_set_list:
+##for tile_set in fg_tile_set_list:
 ##    for j,tile in enumerate(tile_set):
 ##        tp = set()
 ##        if tile:
 ##            tp = set(bitplanelib.palette_extract(tile))
-##            fg_tile_upper_palette.update(tp)
+##            fg_tile_palette.update(tp)
 
 # then lazy me let's quantize 18=>16
 fg_nb_colors = 16
-if len(fg_tile_upper_palette)>fg_nb_colors:
-    print(f"Too many colors in fg upper tiles ({len(fg_tile_upper_palette)}), quantizing")
-    bitplanelib.palette_dump(fg_tile_upper_palette,dump_dir / "fg_tile_palette_orig.png",pformat=bitplanelib.PALETTE_FORMAT_PNG)
+if len(fg_tile_palette)>fg_nb_colors:
+    print(f"Too many colors in fg upper tiles ({len(fg_tile_palette)}), quantizing")
+    bitplanelib.palette_dump(fg_tile_palette,dump_dir / "fg_tile_palette_orig.png",pformat=bitplanelib.PALETTE_FORMAT_PNG)
 
     for attempt_nb_colors in [fg_nb_colors+3,fg_nb_colors+2,fg_nb_colors+1,fg_nb_colors]:
-        fg_replacement_dict = quantize_palette(fg_tile_upper_palette,"foreground_upper_tiles",attempt_nb_colors,transparent=magenta,dump_it=dump_it)
-        new_fg_tile_upper_palette = sorted(set(fg_replacement_dict.values()))
-        if len(new_fg_tile_upper_palette)<=fg_nb_colors:
-            print(f"Quantization achieved {len(new_fg_tile_upper_palette)} colors with start colors = {attempt_nb_colors}")
-            fg_tile_upper_palette = new_fg_tile_upper_palette
+        fg_replacement_dict = quantize_palette(fg_tile_palette,"foreground_upper_tiles",attempt_nb_colors,transparent=black,dump_it=dump_it)
+        new_fg_tile_palette = sorted(set(fg_replacement_dict.values()))
+        if len(new_fg_tile_palette)<=fg_nb_colors:
+            print(f"Quantization achieved {len(new_fg_tile_palette)} colors with start colors = {attempt_nb_colors}")
+            fg_tile_palette = new_fg_tile_palette
             break
     else:
         raise Exception("quantize error")  # not really possible since we try 32 as last chance!
-    apply_color_replacement(fg_tile_upper_set_list,fg_replacement_dict)
-    fg_tile_upper_palette = sorted(set(fg_replacement_dict.values()))
-    bitplanelib.palette_dump(fg_tile_upper_palette,dump_dir / "fg_tile_palette_after.png",pformat=bitplanelib.PALETTE_FORMAT_PNG)
+    apply_color_replacement(fg_tile_set_list,fg_replacement_dict)
+    fg_tile_palette = sorted(set(fg_replacement_dict.values()))
+    bitplanelib.palette_dump(fg_tile_palette,dump_dir / "fg_tile_palette_after.png",pformat=bitplanelib.PALETTE_FORMAT_PNG)
 else:
-    fg_tile_upper_palette = sorted(fg_tile_upper_palette)
+    fg_tile_palette = sorted(fg_tile_palette)
 
 # magenta first
-fg_tile_upper_palette.remove(magenta)
-fg_tile_upper_palette.insert(0,magenta)
+##fg_tile_palette.remove(magenta)
+##fg_tile_palette.insert(0,magenta)
 
 
 
 
-print(f"Used fg tile colors: {len(fg_tile_upper_palette)}")
+print(f"Used fg tile colors: {len(fg_tile_palette)}")
 
 bitplanelib
 # pad to 16 colors
-for p in [fg_tile_upper_palette]:
+for p in [fg_tile_palette]:
     p += (16-len(p)) * [(0x10,0x20,0x30)]
 
 ###############
 # background
 ###############
 
-bg_tile_sheet_dict = {i:img for i,img in enumerate(generate_tiles.doit_tiles_16x16())}
+bg_tile_sheet_dict = {i:img for i,img in enumerate(generate_tiles.doit_tiles_8x8_set_0())}
 
 bg_tile_cluts = {}
 read_used_tiles("bg_used_tiles",bg_tile_cluts,BG_NB_TILES,BG_NB_CLUTS)
@@ -666,7 +649,7 @@ bg_tile_set_list = []
 
 
 for i,tsd in bg_tile_sheet_dict.items():
-    tp,tile_set = load_tileset(tsd,i,16,16,"bg_tiles",dump_dir,dump=dump_it,
+    tp,tile_set = load_tileset(tsd,i,8,8,"bg_tiles",dump_dir,dump=dump_it,
     cluts=bg_tile_cluts,
     name_dict=None)
     for j,tile in enumerate(tile_set):
@@ -714,7 +697,7 @@ for i,tsd in sprite_sheet_dict.items():
 # so 1-bitplane images are blitted faster
 
 # pad if needed
-bg_tile_palette.remove(magenta)
+##bg_tile_palette.remove(magenta)
 bg_tile_palette = sorted(bg_tile_palette)
 
 
@@ -751,17 +734,17 @@ is_bob=False, nb_cluts=BG_NB_CLUTS, mask_color=black)
 
 tile_plane_cache = {}
 bob_plane_cache = {}
-fg_tile_upper_table,_ = read_tileset(fg_tile_upper_set_list,fg_tile_upper_palette,[True,False,False,False],cache=tile_plane_cache, is_bob=False, nb_cluts=FG_NB_CLUTS, mask_color=magenta)
+fg_tile_table,_ = read_tileset(fg_tile_set_list,fg_tile_palette,[True,False,False,False],cache=tile_plane_cache, is_bob=False, nb_cluts=FG_NB_CLUTS, mask_color=black)
 
 
-sprite_table,_ = read_tileset(sprite_set_list,bg_tile_palette,[True,False,False,False],cache=bob_plane_cache, is_bob=True, mask_color=magenta, nb_cluts=SPRITE_NB_CLUTS)
+sprite_table,_ = read_tileset(sprite_set_list,bg_tile_palette,[True,False,False,False],cache=bob_plane_cache, is_bob=True, mask_color=black, nb_cluts=SPRITE_NB_CLUTS)
 
 
 
 with open(src_dir / "palette.68k","w") as f:
     f.write(generated_message)
     f.write("fg_tile_palette:\n")
-    bitplanelib.palette_dump(fg_tile_upper_palette,f,bitplanelib.PALETTE_FORMAT_ASMGNU)
+    bitplanelib.palette_dump(fg_tile_palette,f,bitplanelib.PALETTE_FORMAT_ASMGNU)
     f.write("bg_tile_palette:\n")
     bitplanelib.palette_dump(bg_tile_palette,f,bitplanelib.PALETTE_FORMAT_ASMGNU)
 
@@ -802,7 +785,7 @@ with open(src_dir / "sprite_groups.68k","w") as f:
 ##    bitplanelib.dump_asm_bytes(object_type_table,f,mit_format=True,size=1)
 
 # merge both tables
-fg_tile_table = fg_tile_upper_table
+fg_tile_table = fg_tile_table
 
 with open(src_dir / "graphics.68k","w") as f:
     f.write(generated_message)

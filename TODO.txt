@@ -1,3 +1,6 @@
+- log fg/bg tiles is wrong (title seems OK in memory)
+- screen seems not initialized?? one DPF layer bitplanes is not set
+
 - set DSW difficulty lives, etc.
 - cheat add 10000 to score 
 - highscore load/save

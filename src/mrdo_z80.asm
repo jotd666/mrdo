@@ -566,7 +566,7 @@ table_0156:
 03A1: AF          xor  a
 03A2: 06 06       ld   b,$06
 03A4: EB          ex   de,hl
-03A5: 71          ld   (hl),c
+03A5: 71          ld   (hl),c	; [video_address]
 03A6: C5          push bc
 03A7: 01 00 04    ld   bc,$0400
 03AA: 09          add  hl,bc
@@ -580,7 +580,7 @@ table_0156:
 03B6: F6 80       or   $80
 03B8: F5          push af
 03B9: E6 0F       and  $0F
-03BB: 12          ld   (de),a
+03BB: 12          ld   (de),a	; [video_address]
 03BC: F1          pop  af
 03BD: E5          push hl
 03BE: 21 20 FC    ld   hl,$FC20
@@ -650,14 +650,14 @@ table_0156:
 040D: D1          pop  de
 040E: D9          exx
 040F: D9          exx
-0410: 12          ld   (de),a
+0410: 12          ld   (de),a		; [unchecked_address]
 0411: 21 00 04    ld   hl,$0400
 0414: 19          add  hl,de
 0415: D9          exx
 0416: 08          ex   af,af'
 0417: 7E          ld   a,(hl)
 0418: D9          exx
-0419: 77          ld   (hl),a
+0419: 77          ld   (hl),a		; [video_address]
 041A: 21 20 00    ld   hl,$0020
 041D: 19          add  hl,de
 041E: EB          ex   de,hl
@@ -693,9 +693,9 @@ table_0156:
 0443: D5          push de
 0444: 21 00 04    ld   hl,$0400
 0447: 19          add  hl,de
-0448: 12          ld   (de),a
+0448: 12          ld   (de),a		; [unchecked_address]
 0449: 08          ex   af,af'
-044A: 77          ld   (hl),a
+044A: 77          ld   (hl),a		; [video_address]
 044B: 3C          inc  a
 044C: 08          ex   af,af'
 044D: 13          inc  de
@@ -711,7 +711,7 @@ table_0156:
 045B: C9          ret
 045C: C5          push bc
 045D: E5          push hl
-045E: 77          ld   (hl),a
+045E: 77          ld   (hl),a		; [video_address]
 045F: 23          inc  hl
 0460: 10 FC       djnz $045E
 0462: E1          pop  hl
@@ -726,8 +726,8 @@ table_0156:
 046E: D5          push de
 046F: 21 00 04    ld   hl,$0400
 0472: 19          add  hl,de
-0473: 12          ld   (de),a
-0474: 36 29       ld   (hl),$29
+0473: 12          ld   (de),a		; [unchecked_address]
+0474: 36 29       ld   (hl),$29		; [video_address]
 0476: 13          inc  de
 0477: 23          inc  hl
 0478: 10 F9       djnz $0473
@@ -742,11 +742,11 @@ table_0156:
 0485: 11 70 88    ld   de,$8870
 0488: 21 47 05    ld   hl,$0547
 048B: 3E A5       ld   a,$A5
-048D: 12          ld   (de),a
+048D: 12          ld   (de),a		; [video_address]
 048E: 13          inc  de
 048F: 06 04       ld   b,$04
 0491: 7E          ld   a,(hl)
-0492: 12          ld   (de),a
+0492: 12          ld   (de),a		; [video_address]
 0493: 23          inc  hl
 0494: 3A 03 98    ld   a,(protection_byte_9803)
 0497: E6 7E       and  $7E
@@ -1583,12 +1583,12 @@ cc_returning_05d7:
 101D: 09          add  hl,bc
 101E: EB          ex   de,hl
 101F: 1A          ld   a,(de)
-1020: 77          ld   (hl),a
+1020: 77          ld   (hl),a		; [video_address]
 1021: 01 00 01    ld   bc,$0100
 1024: 09          add  hl,bc
 1025: 13          inc  de
 1026: 1A          ld   a,(de)
-1027: 77          ld   (hl),a
+1027: 77          ld   (hl),a		; [video_address]
 1028: D9          exx
 1029: C9          ret
 
