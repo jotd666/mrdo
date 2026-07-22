@@ -619,9 +619,9 @@ table_0156:
 03EA: 08          ex   af,af'
 03EB: 7E          ld   a,(hl)
 03EC: D9          exx
-03ED: 77          ld   (hl),a
+03ED: 77          ld   (hl),a		; [unchecked_address]
 03EE: 08          ex   af,af'
-03EF: 12          ld   (de),a
+03EF: 12          ld   (de),a		; [video_address]
 03F0: 13          inc  de
 03F1: 23          inc  hl
 03F2: D9          exx
@@ -1592,7 +1592,7 @@ cc_returning_05d7:
 1028: D9          exx
 1029: C9          ret
 
-1086: 3A 03 A0    ld   a,($A003)
+1086: 3A 03 A0    ld   a,(dsw_2_a003)	; [unchecked_address]
 1089: 47          ld   b,a
 108A: E6 0F       and  $0F
 108C: 28 04       jr   z,$1092

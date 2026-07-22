@@ -24,7 +24,7 @@ AFB_68030 = 2
 
 
 NB_POSSIBLE_SPRITES = 0x100
-NB_POSSIBLE_TILES = 0x100
+NB_POSSIBLE_TILES = 0x200
 BORDERBLANK = 0
 
 ***********
@@ -114,7 +114,7 @@ OPT_ENABLE_MULTIPLEXED_SPRITES = 0
 NB_TILE_PLANES = 4
 NB_BOB_PLANES = 4
 TOTAL_NB_COLORS = 1<<NB_TILE_PLANES
-BG_NB_BYTES_PER_ROW = 40*2
+BG_NB_BYTES_PER_ROW = 40
 
 * add 16 so sprites can be drawn at the bottom
 * without corrupting the screen
@@ -216,24 +216,9 @@ mul\value\()_table:
 	* which is interrupted, then calls game irq which uses S
 	
 	.macro	OSD_ENTER
-	tst.b	osd_entry_count
-	jne		osd_enter_\@
-	* top entry: save game U register
-	move.w	d5,target_usp_value
-	* save & relocate stack
-	move.l	a7,saved_stack
-	lea		osd_stack,a7
-osd_enter_\@:
-	addq.b	#1,osd_entry_count	| increase nesting
 	.endm
 	
 	.macro	OSD_EXIT
-	subq.b	#1,osd_entry_count	| decrease nesting
-	jne		osd_exit_\@
-	* out of the osd stack: restore game stack
-	move.l	saved_stack,a7
-	* osd didn't change d5
-osd_exit_\@:
 	.endm
 	
 * debug macro that colors the screen until LMB pressed
@@ -506,6 +491,7 @@ _user:
 	* in AGA version, BOB bitplanes are on 2nd playfield
 	jbsr		set_bob_bitplanes
 	.endif
+
 	
 	lea		palette,a0
 	.ifdef	OCS_VERSION
@@ -773,23 +759,24 @@ call_bcpl:
 
 
 cache_bg_tiles_address:
-	
+
 	* cache: address => tile-accurate X,Y
 	lea		bg_tile_address_table,a0
-	move.w	#0,d7
+	move.w	#0x81,d7
+	add.w	d7,a0
 0:
 	move.w	d7,d0
 	and.w	#0x1F,d0
-	lsl.w	#8,d0
+	neg.w	d0
+	add.w	#0x1F,d0
+	move.b	d0,(a0)+
 	move.w	d7,d1
 	lsr.w	#5,d1
-	neg.w	d1
-	add.w	#0x1F,d1
-	
-	or.b	d1,d0
-	move.w	d0,(a0)+
+*	neg.w	d1
+*	add.w	#0x1F,d1
+	move.b	d1,(a0)+
 	addq	#1,d7
-	cmp.w	#0x400,d7
+	cmp.w	#0x400-0x81,d7
 	jne		0b
 	
 	rts
@@ -969,7 +956,7 @@ level3_interrupt:
 	
 	
 	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
-	bsr		switch_screen_buffers
+	jbsr		switch_screen_buffers
 	.endif
 
 	
@@ -1314,7 +1301,7 @@ really_update_hw_sprites:
 	
 	* now update in the reverted order // the bobs
 	lea		(LAST_SPRITE,a6),a0		| sprite start
-	lea		hws_table,a4
+	*lea		hws_table,a4
 	lea		game_sprites+2,a2				| copperlist part
 	lea		game_sprites_end+2,a6			| end
 	move.w	#NB_TARGET_SPRITES,d6
@@ -1619,57 +1606,16 @@ blit_background:
 	
 	.endif
 	
-*void mappy_state::mappy_draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect, uint8_t *spriteram_base)
+*void mrdo_state::draw_sprites(bitmap_ind16 &bitmap,const rectangle &cliprect)
 *{
-*	uint8_t *spriteram = spriteram_base + 0x780;
-*	uint8_t *spriteram_2 = spriteram + 0x800;
-*	uint8_t *spriteram_3 = spriteram_2 + 0x800;
-*	int offs;
-*
-*	for (offs = 0;offs < 0x80;offs += 2)
+*	for (int offs = m_spriteram.bytes() - 4; offs >= 0; offs -= 4)
 *	{
-*		/* is it on? */
-*		if ((spriteram_3[offs+1] & 2) == 0)
+*		if (m_spriteram[offs + 1] != 0)
 *		{
-*			static const uint8_t gfx_offs[2][2] =
-*			{
-*				{ 0, 1 },
-*				{ 2, 3 }
-*			};
-*			int sprite = spriteram[offs];
-*			int color = spriteram[offs+1];
-*			int sx = spriteram_2[offs+1] + 0x100 * (spriteram_3[offs+1] & 1) - 40;
-*			int sy = 256 - spriteram_2[offs] + 1;   // sprites are buffered and delayed by one scanline
-*			int flipx = (spriteram_3[offs] & 0x01);
-*			int flipy = (spriteram_3[offs] & 0x02) >> 1;
-*			int sizex = (spriteram_3[offs] & 0x04) >> 2;
-*			int sizey = (spriteram_3[offs] & 0x08) >> 3;
-*			int x,y;
-*
-*			sprite &= ~sizex;
-*			sprite &= ~(sizey << 1);
-*
-*			sy -= 16 * sizey;
-*			sy = (sy & 0xff) - 32;  // fix wraparound
-*
-*			if (flip_screen())
-*			{
-*				flipx ^= 1;
-*				flipy ^= 1;
-*			}
-*
-*			for (y = 0;y <= sizey;y++)
-*			{
-*				for (x = 0;x <= sizex;x++)
-*				{
-*					m_gfxdecode->gfx(1)->transmask(bitmap,cliprect,
-*						sprite + gfx_offs[y ^ (sizey * flipy)][x ^ (sizex * flipx)],
-*						color,
-*						flipx,flipy,
-*						sx + 16*x,sy + 16*y,
-*						m_palette->transpen_mask(*m_gfxdecode->gfx(1), color, 15));
-*				}
-*			}
+*			m_gfxdecode->gfx(2)->transpen(bitmap,cliprect,
+*					m_spriteram[offs], m_spriteram[offs + 2] & 0x0f,
+*					m_spriteram[offs + 2] & 0x10, m_spriteram[offs + 2] & 0x20,
+*					m_spriteram[offs + 3], 256 - m_spriteram[offs + 1], 0);
 *		}
 *	}
 *}
@@ -1698,36 +1644,14 @@ update_one_bob:
 	moveq	#0,d3
 	move.b	(TARGET_SPRITE_CODE,a0),d3
 
-	
-	cmp.b	#0x32+SPRITE_Y_CORRECTION,d0			| position of first "D" of dig dug title
-	jne		0f
-	cmp.b	#0xE0,d3
-	jcs		0f
-	jne		1f
-	* left top title sprite: draw entire title
-	move.l	a0,-(a7)
-	lea		title_pic,a0
-	jra		101f    | bypass sprite clut/mirror shit stuff, proceed to blit
-1:
-	cmp.b	#0xF5,d3
-	jcc		0f
-	* don't draw title sprites
-	rts
-0:
+
 
 	* load properties (for X size mostly, used for dragons and flames,
 	* where sprite tiles can be used with or without X size, which makes it
 	* more complicated to display as opposed to X&Y size (big inflated monsters)
 	* and Y size (player hammering), that are only displayed grouped
-	lea		bob_table,a4
-	move.b	(TARGET_SPRITE_ATTR,a0),d4
-	btst	#SIZE_X_BIT,d4
-	jeq		0f
-	btst	#SIZE_Y_BIT,d4
-	jne		0f			| XY are with normal sprites
-	* draw from alternate table
-	lea		bob_table_x_size,a4
-0:
+	lea		shared_bob_table,a4
+
 	and.b	#0xF,d2		| CLUT
 	
 	* check if it is a grouped sprite in the table with 0x100 pre-computed entries
@@ -2221,6 +2145,8 @@ bob_plane_size:
 blitter_modulo:
 	.word	0
 	
+* same layout for both layers
+fg_tile_address_table:
 bg_tile_address_table:
 	.skip	0x400*2
 
@@ -2418,7 +2344,7 @@ platform_init:
 	move.w	#BASE_BPLCON2_VALUE,bplcon2(a5)
 	move.w	#BASE_BPLCON3_VALUE,bplcon3(a5)
  	*         VVHH
-    move.w #0x99-0X18+SCROLL_WIDTH+(COPPER_Y_START<<8),diwstrt(a5)
+    move.w #0x79-0X18+SCROLL_WIDTH+(COPPER_Y_START<<8),diwstrt(a5)
     move.w #0x79-0X18+SCROLL_WIDTH+(COPPER_Y_START<<8)+0x1000,diwstop(a5)
     move.w #0x0038,ddfstrt(a5)
     move.w #0x00D0,ddfstop(a5)
@@ -2432,7 +2358,7 @@ platform_init:
     move.w d0,bpl1mod(a5)
 	.else
     move.w #(SPRITE_FMODE<<2)+BITPLANE_FMODE,fmode(a5)	| 32 bit bitplane fetch, 64 bit wide sprites
-	move.w	#0,bplcon4(a5)			| use the same colors as bobs playfield
+	move.w	#0,bplcon4(a5)			| sprites use the same colors as bobs playfield
 
 
 	move.w	#FMODE_OFFSET+BG_NB_BYTES_PER_ROW-40,d0
@@ -2500,6 +2426,7 @@ platform_init:
 	jbsr		_mt_install_cia
 	
 	jbsr	cache_bg_tiles_address
+	*jbsr	cache_fg_tiles_address   | same offsets
 
     rts
 	
@@ -2602,6 +2529,7 @@ video_byte_dirty:
 	move.b	(a0,d2.w),d1		| attribute
 	add.w	#VIDEO_PAGE_SIZE,a0
 	move.b	(a0,d2.w),d0		| code
+	
 
 	jra		update_fg_tile
 
@@ -2610,101 +2538,202 @@ osd_video_dirty_out:
 	moveq	#0,d7
 	rts
 	
-	.ifdef	XXX
-* < D7: 0-0x800
-* > D0: 
-compute_tile_xy:
+
+	* in the end, D0 is the offset to add to plane pointer(s)
+	
+	.macro	DECODE_UPDATE_TILE_INPUTS	lt
+	move.w	d2,d7
+	
+	moveq	#0,d2			| mask up to 255
+	move.b	d0,d2			| tile code
+	moveq	#0,d3
+	move.b	d1,d3			| CLUT & tile code & flags
+
+	bclr	#7,d3
+	jeq		0f
+	bset	#8,d2			| bit 7 of attribute => add 0x100 to code
+0:
+	
+	bclr	#6,d3			| ATM force layer 0 disregarded
+	
+
+	.ifne	OPT_ENABLE_LOGGING
+	lea		\lt\()_character_log_table,a0
+	movem.l	d2-d3,-(a7)
+	and.w	#TILE_CLUT_MASK,d3
+	lsl.w	#TILE_CLUT_POW2,d2		| 64 cluts
+	add.w	d2,d3		| clut offset
+
+	st.b	(a0,d3.l)
+	movem.l	(a7)+,d2-d3
+	.endif
+
 	moveq	#0,d0
-	move.b	d7,d0
-	
-	and.b	#0x3F,d0	| x
-	move.w	d7,d1
-	and.w	#0x7FF,d1
-	lsr.w	#6,d1		| Y
-	lsl.w	#3,d1		| times 8
-	rts
-	.endif
+	moveq	#0,d1
+	lea		\lt\()_tile_address_table,a0
 
-
-* < D7: 0-0x400 address
-* < D0: tile code
-* < D1: color code
-
-update_fg_tile:	
-	
-	moveq	#0,d2			| mask up to 255
-	move.b	d0,d2			| tile code
-	moveq	#0,d3
-	move.b	d1,d3			| CLUT & tile code & flags
-
-	bclr	#7,d3
-	jeq		0f
-	bset	#8,d2			| bit 7 of attribute => add 0x100 to code
-0:
-	
-	bclr	#6,d3			| ATM force layer 0 disregarded
-	
-
-	.ifne	OPT_ENABLE_LOGGING
-	lea		fg_character_log_table,a0
-	movem.l	d2-d3,-(a7)
-	and.w	#TILE_CLUT_MASK,d3
-	lsl.w	#TILE_CLUT_POW2,d2		| 64 cluts
-	add.w	d2,d3		| clut offset
-
-	st.b	(a0,d3.l)
-	movem.l	(a7)+,d2-d3
-	.endif
-	rts
-	
-	
-
-* < D7: 0-0x400 address
-* < D0: tile code
-* < D1: color code
-
-update_bg_tile:	
-	moveq	#0,d2			| mask up to 255
-	move.b	d0,d2			| tile code
-	moveq	#0,d3
-	move.b	d1,d3			| CLUT & tile code & flags
-
-	bclr	#7,d3
-	jeq		0f
-	bset	#8,d2			| bit 7 of attribute => add 0x100 to code
-0:
-	
-	bclr	#6,d3			| ATM force layer 0 disregarded
-	
-	.ifne	OPT_ENABLE_LOGGING
-	lea		bg_character_log_table,a0
-	movem.l	d2-d3,-(a7)
-	and.w	#TILE_CLUT_MASK,d3
-	lsl.w	#TILE_CLUT_POW2,d2		| 64 cluts
-	add.w	d2,d3		| clut offset
-
-	st.b	(a0,d3.l)
-	movem.l	(a7)+,d2-d3
-	.endif
-
-	rts
-	
-	lea		bg_tile_address_table,a0
 	* directly fetch
 	* the decoded X,Y values from a pre-generated table
 
 	.ifdef	NO68020
 	add.w	d7,d7
-	add.w	d7,d7
 	add.w	d7,a0
 	.else
-	lea		(a0,d7.w*4),a0
+	lea		(a0,d7.w*2),a0
 	.endif
-	move.w	(a0)+,d0
-	jmi		2f
-	move.w	(a0),d1
+	move.b	(a0)+,d0
+	move.b	(a0),d1
+
+	lea		mulBG_NB_BYTES_PER_ROW_table,A2
+	.ifdef	NO68020
+	add.w	d1,d1
+	move.w	(a2,d1.w),d1
+	.else
+	move.w	(a2,d1.w*2),d1
+	.endif
+	lsl.w	#3,d1		| times 8
+	add.w	d1,d0
+	.endm
+
+
+	.macro	COPY_TILE_PLANE_ROW
+	move.b	d0,(offset,a1)  | buffer
+	move.b	d0,(offset,a3)	| second buffer
+	move.b	d0,(offset,a4)	| second buffer
+	.endm
 	
+	.macro	CLEAR_TILE_PLANE
+	.set	offset,0
+	.rept	8
+	clr.b	(offset,a1)
+	clr.b	(offset,a3)  | restore buffer
+	clr.b	(offset,a4)	| second buffer
+	.set	offset,offset+BG_NB_BYTES_PER_ROW
+	.endr	
+	.endm
 	
+
+	
+	.macro	TILE_NEXT_PLANE
+	add.w	d5,a1
+	add.w	d5,a4
+	add.w	d5,a3
+	.endm
+	
+* < D7: 0-0x400 address
+* < D0: tile code
+* < D1: color code
+
+update_fg_tile:	
+	DECODE_UPDATE_TILE_INPUTS	fg
+	
+	* updating bitplanes
+	move.l	#BG_SCREEN_PLANE_SIZE,d5
+	move.w	#NB_TILE_PLANES-1,d4
+	.ifdef	OCS_VERSION
+	* OCS ??? how to implement??
+	ILLEGAL FUCK
+	lea		bg_screen_buffer_1,a1
+	lea		bg_screen_buffer_2,a4
+
+	.else
+	* AGA
+	lea		fg_screen_buffer_1,a1
+	lea		fg_screen_buffer_2,a4
+	.endif
+	
+	add.w	d0,a1
+	add.w	d0,a4
+
+	* fg buffer has to share with sprites/bobs: background restore needed
+	lea		background_restore_buffer,a3
+	add.w	d0,a3
+	
+	*cmp.b	#0x20,d2
+	*jeq		11f				| optim: blank tile
+	lea		fg_character_table,a0
+	.ifdef	NO68020
+	add.w	d2,d2
+	add.w	d2,d2	
+	move.l	(a0,d2.w),d0		| tile pointer
+	.else
+	move.l	(a0,d2.w*4),d0		| tile pointer
+	.endif
+	.ifdef	RELEASE
+	jeq		11f					| clear tile, no error (release)
+	.else
+	jne		12f
+	add.w	#VIDEO_ADDRESS+2*VIDEO_PAGE_SIZE,d7
+	.ifdef	NO68020
+	lsr.w	#2,d2
+	.endif
+	*BREAKPOINT	"illegal fg D2=til"
+	move.w	#0xF0F,_custom+color
+	jra		11f
+12:
+	.endif
+	move.l	d0,a2
+	and.w	#TILE_CLUT_MASK,d3
+	.ifdef	NO68020
+	add.w	d3,d3
+	add.w	d3,d3
+	move.l	(a2,d3.w),d0			| pointer on tile bitplanes for that CLUT
+	.else
+	move.l	(a2,d3.w*4),d0			| pointer on tile bitplanes for that CLUT	
+	.endif
+	.ifdef	RELEASE
+	jeq		11f						| not necessarily a problem
+	.else
+	jne		12f
+	add.w	#VIDEO_ADDRESS+2*VIDEO_PAGE_SIZE,d7
+	lsr.w	#2,d2
+	lsr.w	#2,d3
+	move.w	#0xF0F,_custom+color
+	jra		11f
+	.endif
+12:
+	move.l	d0,a2					| pointer on bitplanes
+	
+	* just copy
+
+4:
+	move.l	(a2)+,d0		| next plane
+	jeq		5f
+	move.l	d0,a0
+	.set	offset,0
+	.rept	8
+	move.b	(a0)+,d0
+	COPY_TILE_PLANE_ROW
+	.set	offset,offset+BG_NB_BYTES_PER_ROW
+	.endr
+41:
+	TILE_NEXT_PLANE
+	dbf		d4,4b
+	
+0:
+	rts
+5:
+	CLEAR_TILE_PLANE
+	jra		41b
+
+
+	* clear tile
+
+11:
+111:
+	CLEAR_TILE_PLANE
+	TILE_NEXT_PLANE
+	dbf		d4,111b
+2:
+	rts
+	
+* < D2: 0-0x400 address
+* < D0: tile code
+* < D1: color code
+
+update_bg_tile:
+	DECODE_UPDATE_TILE_INPUTS	bg
+
 	* updating bitplanes
 	move.l	#BG_SCREEN_PLANE_SIZE,d5
 	move.w	#NB_TILE_PLANES-1,d4
@@ -2721,14 +2750,7 @@ update_bg_tile:
 	move.l		background_ptr,a1
 	.endif
 	
-	lea		mulBG_NB_BYTES_PER_ROW_table,A2
-	.ifdef	NO68020
-	add.w	d1,d1
-	move.w	(a2,d1.w),d1
-	.else
-	move.w	(a2,d1.w*2),d1
-	.endif
-	add.w	d1,d0
+
 	add.w	d0,a1
 	.ifdef	OCS_VERSION
 	lea		background_restore_buffer,a3
@@ -2737,7 +2759,7 @@ update_bg_tile:
 	
 	*cmp.b	#0x20,d2
 	*jeq		11f				| optim: blank tile
-	lea		character_table,a0
+	lea		bg_character_table,a0
 	.ifdef	NO68020
 	add.w	d2,d2
 	add.w	d2,d2	
@@ -2778,187 +2800,11 @@ update_bg_tile:
 12:
 	move.l	d0,a2					| pointer on bitplanes
 
-
-*	* should we print the tile once or twice?
-*	tst.b	d6
-*	jeq		20f		| just once
-*	* do it twice. Preserve useful registers
-*	movem.l	a1/a2,-(a7)
-*	jbsr		standard_tile
-*	movem.l	(a7)+,a1/a2
-*	* draw the same thing more to the right
-*	add.w	#64,a1
-*	move.w	#NB_TILE_PLANES-1,d4
-*20:
-	
-	.macro	COPY_TILE_PLANE_ROW
-	move.b	d0,(offset,a1)  | buffer
-	.ifdef	OCS_VERSION
-	move.b	d0,(offset,a3)  | restore buffer
-	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
-	move.b	d0,(offset,a4)	| second buffer
-	.endif
-	.endif
-	.endm
-	
-	.macro	CLEAR_TILE_PLANE
-	.set	offset,0
-	.rept	8
-	clr.b	(offset,a1)
-	.ifdef	OCS_VERSION
-	clr.b	(offset,a3)  | restore buffer
-	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
-	clr.b	(offset,a4)	| second buffer
-	.endif
-	.endif
-	.set	offset,offset+BG_NB_BYTES_PER_ROW
-	.endr	
-	.endm
-	
-*	.macro	COPY_TILE_PLANE_ROW_BACKBUFFER
-*	COPY_TILE_PLANE_ROW
-*	move.b	d0,(offset,a3)  | backbuffer
-*	.endm
-*	
-*	.macro	CLEAR_TILE_PLANE_BACKBUFFER
-*	.set	offset,0
-*	.rept	8
-*	clr.b	(offset,a1)
-*	clr.b	(offset,a3)
-*	.set	offset,offset+BG_NB_BYTES_PER_ROW
-*	.endr	
-*	.endm
-	
-	.macro	TILE_NEXT_PLANE
-	add.w	d5,a1
-	.ifdef	OCS_VERSION
-	add.w	d5,a3
-	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
-	add.w	d5,a4
-	.endif
-	.endif
-	.endm
-	
-* made more complex by 4 tile orientations + the fact that the last
-* tile bitplane should not be copied into the backbuffer as sprites
-* only use 4 planes
-standard_tile:
-
-	* just copy
-
-4:
-	move.l	(a2)+,d0		| next plane
-	jeq		5f
-	move.l	d0,a0
-	.set	offset,0
-	.rept	8
-	move.b	(a0)+,d0
-	COPY_TILE_PLANE_ROW
-	.set	offset,offset+BG_NB_BYTES_PER_ROW
-	.endr
-41:
-	TILE_NEXT_PLANE
-	dbf		d4,4b
-	
-0:
+	* TODO update bg with a copy of standard_xxx but no macros
+	* as there's no double buffering or buffer restore on that plane
 	rts
-5:
-	CLEAR_TILE_PLANE
-	jra		41b
-
-
-flipped_tile:	
-4:
-	move.l	(a2)+,d0		| next plane
-	jeq		5f
-	move.l	d0,a0
-	.set	offset,8*BG_NB_BYTES_PER_ROW
-	.rept	8
-	.set	offset,offset-BG_NB_BYTES_PER_ROW
-	move.b	(a0)+,d0
-	COPY_TILE_PLANE_ROW
-	.endr
-41:
-	TILE_NEXT_PLANE
-	dbf		d4,4b
-	
-0:
-	rts
-5:
-	CLEAR_TILE_PLANE
-	jra		41b
-	
-mirror_tile:
-	lea		mirror_bits(pc),a4
-	moveq	#0,d1
-4:
-	move.l	(a2)+,d0		| next plane
-	jeq		5f
-	move.l	d0,a0
-	.set	offset,0
-	.rept	8
-	move.b	(a0)+,d1
-	move.b	(a4,d1.w),d0	| mirror
-	COPY_TILE_PLANE_ROW
-
-	.set	offset,offset+BG_NB_BYTES_PER_ROW
-	.endr
-41:
-	TILE_NEXT_PLANE
-	dbf		d4,4b
 	
 
-0:
-	rts
-
-5:
-	CLEAR_TILE_PLANE
-	jra		41b
-	
-mirror_flipped_tile:
-	lea		mirror_bits(pc),a4
-	moveq	#0,d1
-4:
-	move.l	(a2)+,d0		| next plane
-	jeq		5f
-	move.l	d0,a0
-	.set	offset,8*BG_NB_BYTES_PER_ROW
-	.rept	8
-	.set	offset,offset-BG_NB_BYTES_PER_ROW
-	move.b	(a0)+,d1
-	move.b	(a4,d1.w),d0	| mirror
-	COPY_TILE_PLANE_ROW
-
-	.endr
-41:
-	TILE_NEXT_PLANE
-	dbf		d4,4b
-
-0:
-	rts
-
-5:
-	CLEAR_TILE_PLANE
-	jra		41b
-
-	* clear tile
-
-11:
-111:
-	CLEAR_TILE_PLANE
-	TILE_NEXT_PLANE
-	dbf		d4,111b
-2:
-	rts
-
-mirror_jump_table:
-	.long	standard_tile
-	.long	mirror_tile
-	.long	flipped_tile
-	.long	mirror_flipped_tile
-	
-mirror_bits:
-	.include "mirror_bits.68k"
 
 	
 * < d0.w: x
@@ -4043,14 +3889,6 @@ bobs_bitplanes:
 	DECL_EVEN_BITPLANES	0,4
 	.endif
 
-	* let the 2 rows from status pass
-	.word	0x01+((COPPER_Y_START+16)*256),0xFFFE
-	
-	.ifdef	OCS_VERSION
-	DECL_BITPLANES	0,4	
-	.else
-	DECL_EVEN_BITPLANES	4,4
-	.endif
 	* pos 25 in PAL: sprite pos are read
 	* we replace the positions by new ones, allowing to
 	* reuse the same sprite data several times
@@ -4101,6 +3939,9 @@ intreq_block_game:
 	.align	8
 	
 		.section .bsschip
+	.skip	4
+background_restore_buffer:
+	.skip	BG_SCREEN_SIZE
 		
 	* AGA and OCS: one background buffer
 bg_screen_buffer_1:
@@ -4109,9 +3950,6 @@ bg_screen_buffer_1:
 	.ifdef	OCS_VERSION
 	* OCS: background restore buffer
 	* and optional extra background buffer for doublebuffer
-	.skip	4
-background_restore_buffer:
-	.skip	BG_SCREEN_SIZE
 
 	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
 bg_screen_buffer_2:

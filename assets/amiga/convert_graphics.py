@@ -339,7 +339,6 @@ plane_orientations = [("standard",lambda x:x),
 
 def read_tileset(img_set_list,palette,plane_orientation_flags,cache,is_bob,nb_cluts,mask_color,next_cache_id = 1):
     nb_planes = int(math.log2(len(palette)))
-
     tile_table = []
     for n,img_set in enumerate(img_set_list):
         tile_entry = []
@@ -630,10 +629,7 @@ else:
 
 print(f"Used fg tile colors: {len(fg_tile_palette)}")
 
-bitplanelib
-# pad to 16 colors
-for p in [fg_tile_palette]:
-    p += (16-len(p)) * [(0x10,0x20,0x30)]
+
 
 ###############
 # background
@@ -703,7 +699,10 @@ bg_tile_palette = sorted(bg_tile_palette)
 
 
 print(f"Used bg tile colors: {len(bg_tile_palette)}")
-bg_tile_palette += (total_nb_colors-len(bg_tile_palette)) * [(0x10,0x20,0x30)]
+
+# pad to 16 colors
+for p in [bg_tile_palette,fg_tile_palette]:
+    p += (16-len(p)) * [(0x10,0x20,0x30)]
 
 if dump_it:
     if not all_tile_cluts:
@@ -734,7 +733,7 @@ is_bob=False, nb_cluts=BG_NB_CLUTS, mask_color=black)
 
 tile_plane_cache = {}
 bob_plane_cache = {}
-fg_tile_table,_ = read_tileset(fg_tile_set_list,fg_tile_palette,[True,False,False,False],cache=tile_plane_cache, is_bob=False, nb_cluts=FG_NB_CLUTS, mask_color=black)
+fg_tile_table,_ = read_tileset(fg_tile_set_list,fg_tile_palette,[True,False,False,False],cache=tile_plane_cache, is_bob=False, mask_color=black, nb_cluts=FG_NB_CLUTS)
 
 
 sprite_table,_ = read_tileset(sprite_set_list,bg_tile_palette,[True,False,False,False],cache=bob_plane_cache, is_bob=True, mask_color=black, nb_cluts=SPRITE_NB_CLUTS)

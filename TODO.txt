@@ -1,6 +1,8 @@
-- log fg/bg tiles is wrong (title seems OK in memory)
-- screen seems not initialized?? one DPF layer bitplanes is not set
-
+- colors are wrong (backgrounds) like MAME F4 view but worse, black should be
+  put in backgrounds
+- bg part scrolls: enlarge bg playfield, separate BG_/FG_ tile widths
+  or just cheat because second layer scroll is just for color bar effect
+  
 - set DSW difficulty lives, etc.
 - cheat add 10000 to score 
 - highscore load/save
