@@ -1,5 +1,4 @@
-- colors are wrong (backgrounds) like MAME F4 view but worse, black should be
-  put in backgrounds
+- colors are wrong
 - bg part scrolls: enlarge bg playfield, separate BG_/FG_ tile widths
   or just cheat because second layer scroll is just for color bar effect
   
