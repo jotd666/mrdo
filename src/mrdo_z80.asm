@@ -95,6 +95,8 @@ nb_credits_e006 = $e006
 flipscreen_9800 = $9800
 sound_1_9801 = $9801
 sound_2_9802 = $9802
+sprite_shadow_ram_e311 = $e311
+sprite_ram_9000 = $9000
 
 reset_0000:
 0000: 31 80 EB    ld   sp,$EB80
@@ -147,7 +149,7 @@ irq_00b8:   ; [global]
 00BE: FD E5       push iy
 00C0: FD 21 00 E0 ld   iy,$E000
 00C4: FD CB 01 7E bit  7,(iy+$01)
-00C8: C4 6D 02    call nz,$026D
+00C8: C4 6D 02    call nz,update_sprites_026d
 00CB: FD CB 01 BE res  7,(iy+$01)
 00CF: CD A6 01    call $01A6
 00D2: CD 90 5A    call $5A90
@@ -378,8 +380,9 @@ table_0156:
 024A: CB E6       set  4,(hl)
 024C: C9          ret
 
-026D: 21 11 E3 ld   hl,$E311
-0270: 11 00 90    ld   de,$9000
+update_sprites_026d:
+026D: 21 11 E3    ld   hl,sprite_shadow_ram_e311
+0270: 11 00 90    ld   de,sprite_ram_9000
 0273: 06 00       ld   b,$00
 0275: 7E          ld   a,(hl)
 0276: 87          add  a,a
@@ -390,7 +393,7 @@ table_0156:
 027D: 04          inc  b
 027E: 23          inc  hl
 027F: ED B0       ldir
-0281: 21 11 E3    ld   hl,$E311
+0281: 21 11 E3    ld   hl,sprite_shadow_ram_e311
 0284: 3E 40       ld   a,$40
 0286: 96          sub  (hl)
 0287: 36 00       ld   (hl),$00
@@ -407,7 +410,7 @@ table_0156:
 0296: C9          ret
 0297: DD 56 01    ld   d,(ix+$01)
 029A: DD 5E 03    ld   e,(ix+$03)
-029D: 21 11 E3    ld   hl,$E311
+029D: 21 11 E3    ld   hl,sprite_shadow_ram_e311
 02A0: 7E          ld   a,(hl)
 02A1: 87          add  a,a
 02A2: D8          ret  c
@@ -445,7 +448,7 @@ table_0156:
 02CC: 71          ld   (hl),c
 02CD: 23          inc  hl
 02CE: 73          ld   (hl),e
-02CF: 21 11 E3    ld   hl,$E311
+02CF: 21 11 E3    ld   hl,sprite_shadow_ram_e311
 02D2: 34          inc  (hl)
 02D3: 21 01 E0    ld   hl,$E001
 02D6: CB FE       set  7,(hl)
@@ -768,7 +771,7 @@ table_0156:
 04B4: AF          xor  a
 04B5: 32 00 F0    ld   ($F000),a
 04B8: 32 00 F8    ld   ($F800),a
-04BB: 32 11 E3    ld   ($E311),a
+04BB: 32 11 E3    ld   (sprite_shadow_ram_e311),a
 04BE: 21 01 E0    ld   hl,$E001
 04C1: CB FE       set  7,(hl)
 04C3: 3A 00 E0    ld   a,($E000)
@@ -850,7 +853,7 @@ table_0156:
 058F: 19          add  hl,de
 0590: 10 D4       djnz $0566
 0592: C9          ret
-0593: 3A 02 A0    ld   a,(dsw_1_a002)
+0593: 3A 02 A0    ld   a,(dsw_1_a002)		; [unchecked_address]
 0596: E6 C0       and  $C0
 0598: 07          rlca
 0599: 07          rlca
@@ -2688,7 +2691,7 @@ cc_returning_05d7:
 1B7D: E1          pop  hl
 1B7E: 0E 04       ld   c,$04
 1B80: 1A          ld   a,(de)
-1B81: BE          cp   (hl)
+1B81: BE          cp   (hl)		; [video_address]
 1B82: C8          ret  z
 1B83: 13          inc  de
 1B84: 0D          dec  c
@@ -2780,7 +2783,7 @@ cc_returning_05d7:
 1D5F: FE 94       cp   $94
 1D61: D0          ret  nc
 1D62: 47          ld   b,a
-1D63: 7E          ld   a,(hl)
+1D63: 7E          ld   a,(hl)		; [unchecked_address]
 1D64: FE 94       cp   $94
 1D66: D8          ret  c
 1D67: 70          ld   (hl),b
@@ -2861,7 +2864,7 @@ cc_returning_05d7:
 1DE6: EB          ex   de,hl
 1DE7: 60          ld   h,b
 1DE8: 69          ld   l,c
-1DE9: 1A          ld   a,(de)
+1DE9: 1A          ld   a,(de)		; [unchecked_address]
 1DEA: FE 88       cp   $88
 1DEC: 28 0D       jr   z,$1DFB
 1DEE: FE 76       cp   $76
@@ -2876,7 +2879,7 @@ cc_returning_05d7:
 1E02: 09          add  hl,bc
 1E03: EB          ex   de,hl
 1E04: 47          ld   b,a
-1E05: 1A          ld   a,(de)
+1E05: 1A          ld   a,(de)		; [unchecked_address]
 1E06: FE 88       cp   $88
 1E08: 28 11       jr   z,$1E1B
 1E0A: FE 89       cp   $89
@@ -2907,7 +2910,7 @@ cc_returning_05d7:
 1E3C: EB          ex   de,hl
 1E3D: 60          ld   h,b
 1E3E: 69          ld   l,c
-1E3F: 1A          ld   a,(de)
+1E3F: 1A          ld   a,(de)		; [unchecked_address]
 1E40: FE 8A       cp   $8A
 1E42: 28 0D       jr   z,$1E51
 1E44: FE 76       cp   $76
@@ -2922,7 +2925,7 @@ cc_returning_05d7:
 1E58: 09          add  hl,bc
 1E59: EB          ex   de,hl
 1E5A: 47          ld   b,a
-1E5B: 1A          ld   a,(de)
+1E5B: 1A          ld   a,(de)		; [unchecked_address]
 1E5C: FE 8A       cp   $8A
 1E5E: 28 11       jr   z,$1E71
 1E60: FE 89       cp   $89
@@ -2953,7 +2956,7 @@ cc_returning_05d7:
 1E92: EB          ex   de,hl
 1E93: 60          ld   h,b
 1E94: 69          ld   l,c
-1E95: 1A          ld   a,(de)
+1E95: 1A          ld   a,(de)	; [unchecked_address]
 1E96: FE 8B       cp   $8B
 1E98: 28 10       jr   z,$1EAA
 1E9A: FE 88       cp   $88
@@ -2965,7 +2968,7 @@ cc_returning_05d7:
 1EA8: 18 03       jr   $1EAD
 1EAA: CD 15 1F    call $1F15
 1EAD: 1B          dec  de
-1EAE: 1A          ld   a,(de)
+1EAE: 1A          ld   a,(de)	; [unchecked_address]
 1EAF: FE 8B       cp   $8B
 1EB1: 28 0E       jr   z,$1EC1
 1EB3: FE 8A       cp   $8A
@@ -2994,7 +2997,7 @@ cc_returning_05d7:
 1EE2: EB          ex   de,hl
 1EE3: 60          ld   h,b
 1EE4: 69          ld   l,c
-1EE5: 1A          ld   a,(de)
+1EE5: 1A          ld   a,(de)		; [unchecked_address]
 1EE6: FE 89       cp   $89
 1EE8: 28 10       jr   z,$1EFA
 1EEA: FE 88       cp   $88
@@ -3006,7 +3009,7 @@ cc_returning_05d7:
 1EF8: 18 03       jr   $1EFD
 1EFA: CD 15 1F    call $1F15
 1EFD: 1B          dec  de
-1EFE: 1A          ld   a,(de)
+1EFE: 1A          ld   a,(de)		; [unchecked_address]
 1EFF: FE 89       cp   $89
 1F01: 28 0E       jr   z,$1F11
 1F03: FE 8A       cp   $8A
@@ -8100,6 +8103,7 @@ jump_table_4e4c:
 4E8F: DD 36 00 A0 ld   (ix+$00),$A0
 4E93: DD 36 06 0A ld   (ix+$06),$0A
 4E97: C9          ret
+
 4E98: DD 46 00    ld   b,(ix+$00)
 4E9B: C5          push bc
 4E9C: CD A9 53    call $53A9
@@ -8137,8 +8141,9 @@ jump_table_4e4c:
 4EE4: 47          ld   b,a
 4EE5: 0E 05       ld   c,$05
 4EE7: CD 97 02    call $0297
-4EEA: E1          pop  hl
+4EEA: E1          pop  hl		; [pop_stack]
 4EEB: C9          ret
+
 4EEC: DD 7E 05    ld   a,(ix+$05)
 4EEF: FE B0       cp   $B0
 4EF1: 28 5F       jr   z,$4F52
@@ -8313,8 +8318,9 @@ jump_table_4e4c:
 507D: C6 10       add  a,$10
 507F: 57          ld   d,a
 5080: CD 9D 02    call $029D
-5083: E1          pop  hl
+5083: E1          pop  hl		; [pop_stack]
 5084: C9          ret
+
 5085: 21 00 E3    ld   hl,$E300
 5088: CB FE       set  7,(hl)
 508A: DD 7E 00    ld   a,(ix+$00)
@@ -8333,15 +8339,16 @@ jump_table_4e4c:
 50AD: DD 35 06    dec  (ix+$06)
 50B0: 28 05       jr   z,$50B7
 50B2: CD B5 51    call $51B5
-50B5: E1          pop  hl
+50B5: E1          pop  hl		; [pop_stack]
 50B6: C9          ret
+
 50B7: DD CB 05 66 bit  4,(ix+$05)
 50BB: 28 07       jr   z,$50C4
 50BD: C3 C0 59    jp   $59C0
 50C0: CB FE       set  7,(hl)
 50C2: CB DE       set  3,(hl)
 50C4: DD 36 00 00 ld   (ix+$00),$00
-50C8: E1          pop  hl
+50C8: E1          pop  hl		; [pop_stack]
 50C9: 3A 00 E0    ld   a,($E000)
 50CC: 87          add  a,a
 50CD: D0          ret  nc
@@ -8578,7 +8585,7 @@ jump_table_4e4c:
 529D: EB          ex   de,hl
 529E: 60          ld   h,b
 529F: 69          ld   l,c
-52A0: 1A          ld   a,(de)
+52A0: 1A          ld   a,(de)		; [unchecked_address]
 52A1: FE 8A       cp   $8A
 52A3: 28 04       jr   z,$52A9
 52A5: FE 76       cp   $76
@@ -8588,7 +8595,7 @@ jump_table_4e4c:
 52AD: 01 E0 FF    ld   bc,$FFE0
 52B0: 09          add  hl,bc
 52B1: EB          ex   de,hl
-52B2: 1A          ld   a,(de)
+52B2: 1A          ld   a,(de)		; [unchecked_address]
 52B3: FE 8A       cp   $8A
 52B5: 28 03       jr   z,$52BA
 52B7: FE 76       cp   $76

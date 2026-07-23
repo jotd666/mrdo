@@ -38,7 +38,7 @@ def doit(nb_colors,offset,nb_cluts,kind,ref_clut_index,dump_it=False):
             rep_dict = {k:v for k,v in zip(ref_clut,this_clut)}
             rep_dict[magenta] = magenta
 
-            rep_dict[ref_clut[0]] = black           # Mr Do makes tiles transparent, always
+            rep_dict[ref_clut[0]] = magenta           # Mr Do makes tiles transparent, always
 
             dest_file = tilegen / f"pal_{i:02x}.png"
             if True:

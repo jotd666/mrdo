@@ -600,7 +600,7 @@ for i,tsd in fg_tile_sheet_dict.items():
 ##            fg_tile_palette.update(tp)
 
 # then lazy me let's quantize 18=>16
-fg_nb_colors = 16
+fg_nb_colors = 15
 if len(fg_tile_palette)>fg_nb_colors:
     print(f"Too many colors in fg upper tiles ({len(fg_tile_palette)}), quantizing")
     bitplanelib.palette_dump(fg_tile_palette,dump_dir / "fg_tile_palette_orig.png",pformat=bitplanelib.PALETTE_FORMAT_PNG)
@@ -620,9 +620,8 @@ if len(fg_tile_palette)>fg_nb_colors:
 else:
     fg_tile_palette = sorted(fg_tile_palette)
 
-# magenta first
-##fg_tile_palette.remove(magenta)
-##fg_tile_palette.insert(0,magenta)
+fg_tile_palette = [magenta]+sorted(fg_tile_palette)
+
 
 
 
@@ -693,8 +692,8 @@ for i,tsd in sprite_sheet_dict.items():
 # so 1-bitplane images are blitted faster
 
 # pad if needed
-##bg_tile_palette.remove(magenta)
-bg_tile_palette = sorted(bg_tile_palette)
+bg_tile_palette.remove(magenta)
+bg_tile_palette = [black]+sorted(bg_tile_palette)
 
 
 
@@ -720,7 +719,7 @@ if dump_it:
 bg_tile_plane_cache = {}
 
 bg_tile_table,_ = read_tileset(bg_tile_set_list,bg_tile_palette,[True,False,False,False],cache=bg_tile_plane_cache,
-is_bob=False, nb_cluts=BG_NB_CLUTS, mask_color=black)
+is_bob=False, nb_cluts=BG_NB_CLUTS, mask_color=magenta)
 
 
 
@@ -733,10 +732,10 @@ is_bob=False, nb_cluts=BG_NB_CLUTS, mask_color=black)
 
 tile_plane_cache = {}
 bob_plane_cache = {}
-fg_tile_table,_ = read_tileset(fg_tile_set_list,fg_tile_palette,[True,False,False,False],cache=tile_plane_cache, is_bob=False, mask_color=black, nb_cluts=FG_NB_CLUTS)
+fg_tile_table,_ = read_tileset(fg_tile_set_list,fg_tile_palette,[True,False,False,False],cache=tile_plane_cache, is_bob=False, mask_color=magenta, nb_cluts=FG_NB_CLUTS)
 
 
-sprite_table,_ = read_tileset(sprite_set_list,bg_tile_palette,[True,False,False,False],cache=bob_plane_cache, is_bob=True, mask_color=black, nb_cluts=SPRITE_NB_CLUTS)
+sprite_table,_ = read_tileset(sprite_set_list,bg_tile_palette,[True,False,False,False],cache=bob_plane_cache, is_bob=True, mask_color=magenta, nb_cluts=SPRITE_NB_CLUTS)
 
 
 

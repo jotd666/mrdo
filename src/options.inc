@@ -30,7 +30,7 @@ RAM_SIZE = 0x10000-RAM_START
 
 	.else
 	
-LOG_BUFFER_SIZE = 0x800000
+LOG_BUFFER_SIZE = 0x100000
 	* amiga specific
 	.macro	BREAKPOINT comment
 	move.l	a0,-(a7)

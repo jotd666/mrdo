@@ -1,4 +1,7 @@
-- colors are wrong
+- colors are wrong: bg misses red in rips, fg tile should be black it is red
+- score is buggy, scene is buggy
+- understand: update_sprites_026d how shadow ram copies in real write only ram, create mockup from amiga mem side
+
 - bg part scrolls: enlarge bg playfield, separate BG_/FG_ tile widths
   or just cheat because second layer scroll is just for color bar effect
   
