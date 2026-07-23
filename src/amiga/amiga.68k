@@ -265,6 +265,7 @@ start:
 	.global osd_blitz		| for debug
 	.global osd_video_byte_dirty
 	.global osd_video_word_dirty
+	.global osd_set_return_address
 	.global osd_read_high_scores
 	.global osd_write_high_scores	
 	.global osd_sound_start
@@ -967,12 +968,20 @@ level3_interrupt:
     movem.l (a7)+,d0-d7/a0-a6
 	* enable osd context switch
     subq.b	#1,osd_entry_count
+	* if return address has been set, jump here (instead of looping
+	* in the interrupt!)
+	tst.l	return_address
+	jeq		0f
+	BREAKPOINT	"REETURNNN"
+	move.l	return_address,(2,a7)
+	clr.l	return_address
+0:
     rte
 	
-osd_read_4802:
-	move.b	#0xF0,d0	| this value seems not to change except at bootup
+osd_set_return_address:
+	move.l	a0,return_address
 	rts
-
+	
 	.ifne	OPT_ENABLE_LOGGING
 
 	
@@ -2475,9 +2484,9 @@ osd_disable_interrupts:
 
 osd_video_byte_dirty:
 	OSD_ENTER
-	movem.l	d0-d7/a0-a3/a6,-(a7)
+	movem.l	d0-d7/a0-a6,-(a7)
 	jbsr	video_byte_dirty
-	movem.l	(a7)+,d0-d7/a0-a3/a6
+	movem.l	(a7)+,d0-d7/a0-a6
 	OSD_EXIT
 	rts	
 
@@ -2804,7 +2813,13 @@ update_bg_tile:
 	* as there's no double buffering or buffer restore on that plane
 	rts
 	
-
+11:
+111:
+	*CLEAR_TILE_PLANE
+	*TILE_NEXT_PLANE
+	dbf		d4,111b
+2:
+	rts
 
 	
 * < d0.w: x
@@ -3412,7 +3427,7 @@ osd_sound_start:
 	*lea		sound_table,a0
 
 	move.w	(a0,d0.w),d1	| sound type
-	jeq		11f		| no sound
+	jeq		110f		| no sound
 	cmp.w	#3,d1
 	jeq		10f		| skipped (normal)
 2:
@@ -3437,7 +3452,7 @@ osd_sound_start:
 	movem.l	(a7)+,d0/d1/a0/a6
 	OSD_EXIT
 	rts
-11:
+110:
 	move.w	d0,d1
 	lsr.w	#3,d1
 
@@ -3533,7 +3548,8 @@ music_pattern:
 	.word	0
 last_started_music_sound:
 	.word	0
-
+return_address:
+	.long	0
 high_score_buffer:
 	.skip	SCORE_FILE_SIZE
 highscore_needs_saving:
@@ -3542,7 +3558,7 @@ highscore_loaded:
 	.byte	0
 
 normal_hiscorename:
-	.asciz	"digdug.high"
+	.asciz	"mrdo.high"
 	.align	2
 	
 

@@ -253,12 +253,12 @@ with open(source_dir / "conv.s") as f:
         if address in [0,0x014D]:
             line = remove_instruction(lines,i)
         elif address == 0x00d5:
-            line = change_instruction("lea\ttable_0156,a4",lines,i)
+            line = change_instruction("lea\ttable_0156,a5",lines,i)
         elif address == 0x00e9:
             line = """
-    move.l    (a4)+,d4                             | [$00e9: ld   e,(hl)] get parameter
+    move.l    (a5)+,d4                             | [$00e9: ld   e,(hl)] get parameter
     lea    (a6,d4.l),a2 |  [$00ee: pop  ix] now IX is the parameter
-    move.l    (a4)+,a0                  | now a4 is the function
+    move.l    (a5)+,a0                  | now a5 is the function
     addq      #4,d6
     MAKE_H
     btst.b    #7,(a2)                        | [$00f4: bit  7,(ix+$00)]
@@ -268,8 +268,7 @@ with open(source_dir / "conv.s") as f:
     MAKE_HL_NO_AR                              | [$00fb: push hl]
     move.w    d6,-(a7)                            | [...]
     move.l    a3,-(a7)                            | [$00fc: push iy]
-    pea    return_0104(pc)   | return address
-    jmp       (a0)
+    jsr       (a0)
 """
 
             kill_code(lines,i,0x0103)
@@ -341,8 +340,19 @@ with open(source_dir / "conv.s") as f:
         elif address == 0x049A:
             # remove protection test
             line = remove_instruction(lines,i)
+        elif address == 0x151:
+            line += "\tlea\tmainloop_0154,a0\n\tjbsr\tosd_set_return_address\n\tjra\tirq_end_0145\n"
+
+        # remove bad stack management in irq, shunt register saving that we don't need
+        elif address in {0x012e,0x0148}:
+            line = change_instruction("rts",lines,i)
+
+        elif address == 0xB8:
+            line = ""
+            kill_code(lines,i,0xbe)
         if "[data]" in line:
             line = line.replace("l_","0x")
+
         ###############################################
         if address in remove_error_in_prev_line:
             lines[i-1] = remove_error(lines[i-1].strip()+f" ({address:04x})")

@@ -201,7 +201,7 @@ return_0104:
 0128: 1F          rra
 0129: 38 03       jr   c,$012E
 012B: 1F          rra
-012C: 38 1F       jr   c,fatal_error_014d
+012C: 38 1F       jr   c,$014d
 012E: FD E1       pop  iy
 0130: DD E1       pop  ix
 0132: F1          pop  af
@@ -215,22 +215,24 @@ return_0104:
 0138: 31 80 EB    ld   sp,$EB80
 013B: FB          ei
 013C: CD EC 54    call $54EC
-013F: 18 0C       jr   fatal_error_014d     ; [breakpoint]
+013F: 18 0C       jr   $014d
 
 0141: 31 76 EB    ld   sp,$EB76
 0144: FB          ei
-0145: CD 8E 55    call $558E    ; [breakpoint]
+irq_end_0145:
+0145: CD 8E 55    call $558E
 0148: F1          pop  af
 0149: E1          pop  hl
 014A: D1          pop  de
 014B: C1          pop  bc
 014C: C9          ret
 
-fatal_error_014d:
+
 014D: 31 80 EB    ld   sp,$EB80		
 0150: FB          ei
-0151: CD 47 56    call $5647  ; [breakpoint]
-0154: 18 FE       jr   $0154
+0151: CD 47 56    call $5647
+mainloop_0154:		; [global]
+0154: 18 FE       jr   mainloop_0154
 
 ; ram pointer, then rom call
 table_0156:
