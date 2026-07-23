@@ -141,12 +141,17 @@ this_dir = pathlib.Path(__file__).absolute().parent
 
 source_dir = this_dir / "../src"
 
-rest_of_jump_table_code = """    MAKE_DE_NO_AR
-    add.w    d4,d4
-    add.w    d4,d4
+def f_rest_of_jump_table_code(nb_cases):
+    rval = f"""    and.w\t#0xFF,d4
+\tcmp.b\t#{nb_cases}*2,d4
+\tjcs\t0f
+\tBREAKPOINT\t"case out of range {nb_cases}"
+0:
+    add.w    d4,d4             | 32 bits
     move.l  (a4,d4.w),a4
     jmp     (a4)
 """
+    return rval
 
 # various dirty but at least automatic patches applying on the converted code
 with open(source_dir / "conv.s") as f:
@@ -295,7 +300,7 @@ with open(source_dir / "conv.s") as f:
             line = "\ttst.b\td7\n"+change_instruction("jeq\tl_1713",lines,i)
             lines[i+1] = remove_error(lines[i+1])
         elif address == 0x32f7:
-            line = "\tlea    jump_table_3300,a4 |  [$32f7: ld   hl,jump_table_3300]\n"+rest_of_jump_table_code
+            line = "\tlea    jump_table_3300,a4 |  [$32f7: ld   hl,jump_table_3300]\n"+f_rest_of_jump_table_code(7)
             kill_code(lines,i,0x32FF)
         elif address == 0x3de5:
             line = """    MAKE_HL    a0
@@ -305,7 +310,7 @@ with open(source_dir / "conv.s") as f:
 """
             kill_code(lines,i,0x3de6)
         elif address == 0x4e3b:
-            line = "\tlea    jump_table_4e4c,a4 | [$4e3b: ld   hl,jump_table_4e4c]\n"+rest_of_jump_table_code
+            line = "\tlea    jump_table_4e4c,a4 | [$4e3b: ld   hl,jump_table_4e4c]\n"+f_rest_of_jump_table_code(11)
             kill_code(lines,i,0x4e43)
         elif address == 0x48C8:
             line = """    MAKE_HL\ta0

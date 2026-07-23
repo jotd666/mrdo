@@ -972,7 +972,6 @@ level3_interrupt:
 	* in the interrupt!)
 	tst.l	return_address
 	jeq		0f
-	BREAKPOINT	"REETURNNN"
 	move.l	return_address,(2,a7)
 	clr.l	return_address
 0:

@@ -1709,7 +1709,7 @@ cc_returning_05d7:
 127B: D8          ret  c
 127C: DD 36 01 DC ld   (ix+$01),$DC
 1280: DD 36 03 00 ld   (ix+$03),$00
-1284: CD 8B 16    call $168B
+1284: CD 8B 16    call $168B		; [breakpoint]
 1287: 30 10       jr   nc,$1299
 1289: DD 36 02 01 ld   (ix+$02),$01
 128D: CD DE 14    call $14DE
@@ -2119,6 +2119,7 @@ cc_returning_05d7:
 1685: 06 02       ld   b,$02
 1687: CD A4 03    call $03A4
 168A: C9          ret
+
 168B: FD E5       push iy
 168D: D1          pop  de
 168E: 13          inc  de
@@ -2207,6 +2208,7 @@ cc_returning_05d7:
 171D: CB C6       set  0,(hl)
 171F: 37          scf
 1720: C9          ret
+
 1721: 06 03       ld   b,$03
 1723: 1A          ld   a,(de)
 1724: BE          cp   (hl)
@@ -5106,7 +5108,7 @@ cc_returning_05d7:
 32EF: E6 F0       and  $F0
 32F1: 0F          rrca
 32F2: 0F          rrca
-32F3: 0F          rrca
+32F3: 0F          rrca			; divided by 8
 32F4: 5F          ld   e,a
 32F5: 16 00       ld   d,$00
 32F7: 21 00 33    ld   hl,jump_table_3300
@@ -8041,7 +8043,7 @@ entry_4bcb:
 4E31: DD 7E 00    ld   a,(ix+$00)
 4E34: E6 78       and  $78
 4E36: 0F          rrca
-4E37: 0F          rrca
+4E37: 0F          rrca		; divided by 4
 4E38: 5F          ld   e,a
 4E39: 16 00       ld   d,$00
 4E3B: 21 4C 4E    ld   hl,jump_table_4e4c
