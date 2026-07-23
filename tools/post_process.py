@@ -258,7 +258,7 @@ with open(source_dir / "conv.s") as f:
         if address in [0,0x014D]:
             line = remove_instruction(lines,i)
         elif address == 0x00d5:
-            line = change_instruction("lea\ttable_0156,a5",lines,i)
+            line = change_instruction("lea\ttable_0156,a5",lines,i)+"\tmove.w\t#0x156,d6\n\tMAKE_H\n"
         elif address == 0x00e9:
             line = """
     move.l    (a5)+,d4                             | [$00e9: ld   e,(hl)] get parameter
@@ -296,8 +296,14 @@ with open(source_dir / "conv.s") as f:
 
         elif address in {0x170a,0x2936,0x2961}:
             line += "\tscs\td7\n"
-        elif address in {0x170f,0x293a,0x2965}:
+        elif address == 0x170f:
             line = "\ttst.b\td7\n"+change_instruction("jeq\tl_1713",lines,i)
+            lines[i+1] = remove_error(lines[i+1])
+        elif address == 0x293a:
+            line = "\ttst.b\td7\n"+change_instruction("jeq\tl_2947",lines,i)
+            lines[i+1] = remove_error(lines[i+1])
+        elif address == 0x2965:
+            line = "\ttst.b\td7\n"+change_instruction("jeq\tl_2976",lines,i)
             lines[i+1] = remove_error(lines[i+1])
         elif address == 0x32f7:
             line = "\tlea    jump_table_3300,a4 |  [$32f7: ld   hl,jump_table_3300]\n"+f_rest_of_jump_table_code(7)

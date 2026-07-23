@@ -168,7 +168,7 @@ irq_00b8:   ; [global]
 00F1: 23          inc  hl
 00F2: 56          ld   d,(hl)
 00F3: 23          inc  hl			; now DE is the function
-00F4: DD CB 00 7E bit  7,(ix+$00)
+00F4: DD CB 00 7E bit  7,(ix+$00)	; task active?
 00F8: 28 0E       jr   z,$0108
 00FA: C5          push bc
 00FB: E5          push hl
@@ -2205,7 +2205,7 @@ cc_returning_05d7:
 171A: EB          ex   de,hl
 171B: 23          inc  hl
 171C: 23          inc  hl
-171D: CB C6       set  0,(hl)
+171D: CB C6       set  0,(hl)	; [breakpoint]
 171F: 37          scf
 1720: C9          ret
 
@@ -2693,7 +2693,7 @@ cc_returning_05d7:
 1B83: 13          inc  de
 1B84: 0D          dec  c
 1B85: 20 F9       jr   nz,$1B80
-1B87: 7E          ld   a,(hl)
+1B87: 7E          ld   a,(hl)		; [video_address]
 1B88: 4F          ld   c,a
 1B89: D6 77       sub  $77
 1B8B: D8          ret  c
@@ -2710,7 +2710,7 @@ cc_returning_05d7:
 1B9B: 19          add  hl,de
 1B9C: 7E          ld   a,(hl)
 1B9D: D9          exx
-1B9E: 77          ld   (hl),a
+1B9E: 77          ld   (hl),a		; [video_address]
 1B9F: C9          ret
 1BA0: FE 25       cp   $25
 1BA2: 30 0E       jr   nc,$1BB2
@@ -2720,9 +2720,9 @@ cc_returning_05d7:
 1BA8: 16 00       ld   d,$00
 1BAA: 21 C9 1C    ld   hl,$1CC9
 1BAD: 19          add  hl,de
-1BAE: 7E          ld   a,(hl)
+1BAE: 7E          ld   a,(hl)	
 1BAF: D9          exx
-1BB0: 77          ld   (hl),a
+1BB0: 77          ld   (hl),a				; [video_address]
 1BB1: C9          ret
 1BB2: D6 25       sub  $25
 1BB4: 1F          rra
@@ -2733,7 +2733,7 @@ cc_returning_05d7:
 1BBC: 19          add  hl,de
 1BBD: 7E          ld   a,(hl)
 1BBE: D9          exx
-1BBF: 77          ld   (hl),a
+1BBF: 77          ld   (hl),a	; [video_address]
 1BC0: C9          ret
 
 1D03: DD CB 10 9E res  3,(ix+$10)
@@ -4459,7 +4459,7 @@ cc_returning_05d7:
 2BC9: D5          push de
 2BCA: CD 89 1D    call $1D89
 2BCD: D1          pop  de
-2BCE: 7E          ld   a,(hl)
+2BCE: 7E          ld   a,(hl)		; [video_address]
 2BCF: D6 72       sub  $72
 2BD1: D8          ret  c
 2BD2: 1F          rra
@@ -5124,7 +5124,7 @@ jump_table_3300:
 	.word	$339E 
 	.word	$35DF 
 	.word	$3581
-	.word	$33A5 
+	.word	demo_first_part_33a5 
 	.word	$3412 
 	.word	$34BE 
 
@@ -5203,6 +5203,8 @@ return_330e:
 33A1: A7          and  a
 33A2: 28 FA       jr   z,$339E
 33A4: C9          ret
+
+demo_first_part_33a5:
 33A5: CD B0 3D    call $3DB0
 33A8: 28 40       jr   z,$33EA
 33AA: CD C1 3D    call $3DC1
@@ -8749,7 +8751,7 @@ jump_table_4e4c:
 
 cc_returning_540b:
 540B: CD 89 1D    call $1D89
-540E: 7E          ld   a,(hl)
+540E: 7E          ld   a,(hl)		; [video_address]
 540F: FE 77       cp   $77
 5411: 38 11       jr   c,$5424
 5413: FE 7C       cp   $7C
